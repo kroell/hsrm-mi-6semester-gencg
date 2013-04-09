@@ -26,9 +26,8 @@ def drawObjekts():
                                            fill=CCOLOR, outline=CCOLOR))
             
 
-
 def quit(root=None):
-    """ quit programm """
+    "Programm beenden"
     if root==None:
         sys.exit(0)
     root._root().quit()
@@ -36,7 +35,7 @@ def quit(root=None):
 
 
 def draw():
-    """ draw elements """
+    "Elemente zeichnen"
     can.delete(*elementList)
     del elementList[:]
     drawObjekts()
@@ -44,6 +43,7 @@ def draw():
 
 
 def forward():
+    "Vorwaerts morphen"
     global time
     while(time<1):
         time += dt
@@ -53,6 +53,7 @@ def forward():
 
 
 def backward():
+    "Rueckwaerts morphen"
     global time
     while(time>0):
         time -= dt
@@ -64,8 +65,12 @@ def backward():
 if __name__ == "__main__":
     # check parameters
     if len(sys.argv) != 3:
-       print "morph.py firstPolygon secondPolygon"
-       sys.exit(-1)
+        print "morph.py firstPolygon secondPolygon"
+        sys.exit(-1)
+    
+    # Ausgabe Dateinamen
+    print "Polygondatei 1: ", sys.argv[1]
+    print "Polygondatei 2: ", sys.argv[2]
 
     # TODOS:
     # - read in polygons
