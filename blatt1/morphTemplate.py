@@ -1,3 +1,12 @@
+'''
+Created on 09.04.2013
+@author: soerenkroell
+'''
+
+#!/usr/bin/python
+# -*-coding: utf-8 -*-
+
+
 from Tkinter import *
 from Canvas import *
 import sys
