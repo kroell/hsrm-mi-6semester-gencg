@@ -10,8 +10,7 @@ Created on 09.04.2013
 from Tkinter import *
 from Canvas import *
 import sys
-import scipy
-import numpy as np
+import copy
 
 
 
@@ -23,10 +22,10 @@ CCOLOR = "#0000FF" # blue
 
 elementList = [] # list of elements (used by Canvas.delete(...))
 
-polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
+#polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
 
 time = 0
-dt = 0.01
+dt = 0.001
 
 def drawObjects():
     """ draw polygon and points """
@@ -55,29 +54,31 @@ def draw():
 def forward():
     "Vorwaerts morphen"
     global time
-    #for i in range(len(polygonA)):
-        #x    =     z->x    +    (    a->x     -    z->x)    *     0.01
-    #    polygon[i][0] = polygonZ[i][0] + (polygonA[i][0]-polygonZ[i][0]) * dt
-    #    polygon[i][1] = polygonZ[i][1] + (polygonA[i][1]-polygonZ[i][1]) * dt
-        
-    while(time<1):
+    print polygonA
+    print polygonZ 
+    
+    while(time < 1):
         time += dt
         # TODO: interpolate 
-        #np.inter(0, polygon)
-        interpolate2()
-        
-        print time
+        for i in range(len(polygon)): 
+            polygon[i][0] = (1 - time) * polygonA[i][0] + time * polygonZ[i][0]
+            polygon[i][1] = (1 - time) * polygonA[i][1] + time * polygonZ[i][1]
+            
         draw()
-
 
 def backward():
     "Rueckwaerts morphen"
     global time
-    for i in range(len(polygonZ)):
-        polygon[i][0] = polygonA[i][0] + (polygonZ[i][0]-polygonA[i][0]) * dt
-        polygon[i][1] = polygonA[i][1] + (polygonZ[i][1]-polygonA[i][1]) * dt
+    print polygonA
+    print polygonZ
+    #polygon = polygonA
+    #while(time > 0):
+    #    time -= dt
+    #    for i in range(len(polygon)): 
+    #        polygon[i][0] = (1 - time) * polygonZ[i][0] + time * polygonA[i][0]
+    #        polygon[i][1] = (1 - time) * polygonZ[i][1] + time * polygonA[i][1]
     
-        draw()
+    draw()
 
 
 def readFile(fileName):
@@ -106,22 +107,6 @@ def localToGlobal(lis):
         i[1] = y
 
 
-def interpolate2():
-    for i in range(len(polygon)):
-        #xi = x1 - y1 * ((x2 - x1) / (y2 - y1))
-        try:
-            polygon[i][0] = polygonA[i][0] - ((polygonA[i][1] * ((polygonZ[i][0] - polygonA[i][0]) / (polygonZ[i][1] - polygonA[i][1]))))
-        except:
-            print "div/0 bei x"
-        
-        #yi = y1 - x1 * ((y2 - y1) / (x2 - x1))
-        try:
-            polygon[i][1] = polygonA[i][1] - ((polygonA[i][0] * ((polygonZ[i][1] - polygonA[i][1]) / (polygonZ[i][0] - polygonA[i][0]))))
-        except:
-            print "div/0 bei y"
-
-
-
 
 if __name__ == "__main__":
     # check parameters
@@ -136,6 +121,7 @@ if __name__ == "__main__":
     # - transform from local into global coordinate system 
     localToGlobal(polygonA)
     localToGlobal(polygonZ)
+
     
     # - make both polygons contain same number of points
     if len(polygonA) > len(polygonZ):
