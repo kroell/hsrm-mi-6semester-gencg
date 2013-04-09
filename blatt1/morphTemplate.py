@@ -10,7 +10,10 @@ Created on 09.04.2013
 from Tkinter import *
 from Canvas import *
 import sys
-from test.test_mhlib import readFile
+import scipy
+import numpy as np
+
+
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
@@ -23,19 +26,17 @@ elementList = [] # list of elements (used by Canvas.delete(...))
 polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
 
 time = 0
-dt = 0.1
+dt = 0.01
 
 def drawObjects():
     """ draw polygon and points """
     # TODO: inpterpolate between polygons and render
     for (p,q) in zip(polygon,polygon[1:]):
         elementList.append(can.create_line(p[0], p[1], q[0], q[1], fill=CCOLOR))
-        #print "p ",p
-        #print "q ",q
         elementList.append(can.create_oval(p[0]-HPSIZE, p[1]-HPSIZE, p[0]+HPSIZE, p[1]+HPSIZE, fill=CCOLOR, outline=CCOLOR))
             
-
-def quit(root=None):
+            
+def quitProgram(root=None):
     "Programm beenden"
     if root==None:
         sys.exit(0)
@@ -54,20 +55,30 @@ def draw():
 def forward():
     "Vorwaerts morphen"
     global time
+    #for i in range(len(polygonA)):
+        #x    =     z->x    +    (    a->x     -    z->x)    *     0.01
+    #    polygon[i][0] = polygonZ[i][0] + (polygonA[i][0]-polygonZ[i][0]) * dt
+    #    polygon[i][1] = polygonZ[i][1] + (polygonA[i][1]-polygonZ[i][1]) * dt
+        
     while(time<1):
         time += dt
-        # TODO: interpolate
+        # TODO: interpolate 
+        #np.inter(0, polygon)
+        interpolate2()
+        
         print time
         draw()
+
 
 def backward():
     "Rueckwaerts morphen"
     global time
-    while(time>0):
-        time -= dt
-        # TODO: interpolate 
-        print time
+    for i in range(len(polygonZ)):
+        polygon[i][0] = polygonA[i][0] + (polygonZ[i][0]-polygonA[i][0]) * dt
+        polygon[i][1] = polygonA[i][1] + (polygonZ[i][1]-polygonA[i][1]) * dt
+    
         draw()
+
 
 def readFile(fileName):
     "Datei einlesen und Inhalt als Liste [[float,float]] zurueckgeben"
@@ -79,16 +90,37 @@ def readFile(fileName):
     
     for i in f: 
         n = i.split()
+        #x,y Koordinaten als float in Liste schreiben
         lis.append(map(float, n))
     return lis
 
-def localToGlobal(lis, min=0):
+
+def localToGlobal(lis):
     "Von lokalem in globales Koordinatensystem umwandeln"
     for i in lis:
-        x = min + i[0] * WIDTH
-        y = min + HEIGHT - i[1] * HEIGHT
+        #x und y neu berechnen mit der Canvas Breite und Hoehe
+        x = i[0] * WIDTH
+        y = HEIGHT - i[1] * HEIGHT
+        #die neuen x und y Werte setzen
         i[0] = x
         i[1] = y
+
+
+def interpolate2():
+    for i in range(len(polygon)):
+        #xi = x1 - y1 * ((x2 - x1) / (y2 - y1))
+        try:
+            polygon[i][0] = polygonA[i][0] - ((polygonA[i][1] * ((polygonZ[i][0] - polygonA[i][0]) / (polygonZ[i][1] - polygonA[i][1]))))
+        except:
+            print "div/0 bei x"
+        
+        #yi = y1 - x1 * ((y2 - y1) / (x2 - x1))
+        try:
+            polygon[i][1] = polygonA[i][1] - ((polygonA[i][0] * ((polygonZ[i][1] - polygonA[i][1]) / (polygonZ[i][0] - polygonA[i][0]))))
+        except:
+            print "div/0 bei y"
+
+
 
 
 if __name__ == "__main__":
@@ -106,11 +138,15 @@ if __name__ == "__main__":
     localToGlobal(polygonZ)
     
     # - make both polygons contain same number of points
-    
+    if len(polygonA) > len(polygonZ):
+        polygonZ.append(polygonZ[0])
+    elif len(polygonA) < len(polygonZ):
+        polygonA.append(polygonA[0])
     
     # polygonA als Anfang setzen
-    polygon = polygonA   
-
+    polygon = polygonA
+    
+    
     # GUI
     mw = Tk()
     mw._root().wm_title("Morphing")
@@ -128,7 +164,7 @@ if __name__ == "__main__":
     bClear.pack(side="left")
     eFr = Frame(mw)
     eFr.pack(side="right")
-    bExit = Button(eFr, text="Quit", command=(lambda root=mw: quit(root)))
+    bExit = Button(eFr, text="Quit", command=(lambda root=mw: quitProgram(root)))
     bExit.pack()
     
     # Objekte zeichnen
