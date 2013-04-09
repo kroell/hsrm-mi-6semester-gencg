@@ -1,6 +1,7 @@
 from Tkinter import *
 from Canvas import *
 import sys
+from test.test_mhlib import readFile
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
@@ -13,17 +14,16 @@ elementList = [] # list of elements (used by Canvas.delete(...))
 polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
 
 time = 0
-dt = 0.01
+dt = 0.1
 
-def drawObjekts():
+def drawObjects():
     """ draw polygon and points """
     # TODO: inpterpolate between polygons and render
     for (p,q) in zip(polygon,polygon[1:]):
-        elementList.append(can.create_line(p[0], p[1], q[0], q[1],
-                                           fill=CCOLOR))
-        elementList.append(can.create_oval(p[0]-HPSIZE, p[1]-HPSIZE,
-                                           p[0]+HPSIZE, p[1]+HPSIZE,
-                                           fill=CCOLOR, outline=CCOLOR))
+        elementList.append(can.create_line(p[0], p[1], q[0], q[1], fill=CCOLOR))
+        #print "p ",p
+        #print "q ",q
+        elementList.append(can.create_oval(p[0]-HPSIZE, p[1]-HPSIZE, p[0]+HPSIZE, p[1]+HPSIZE, fill=CCOLOR, outline=CCOLOR))
             
 
 def quit(root=None):
@@ -38,7 +38,7 @@ def draw():
     "Elemente zeichnen"
     can.delete(*elementList)
     del elementList[:]
-    drawObjekts()
+    drawObjects()
     can.update()
 
 
@@ -51,7 +51,6 @@ def forward():
         print time
         draw()
 
-
 def backward():
     "Rueckwaerts morphen"
     global time
@@ -60,24 +59,50 @@ def backward():
         # TODO: interpolate 
         print time
         draw()
+
+def readFile(fileName):
+    "Datei einlesen und Inhalt als Liste [[float,float]] zurueckgeben"
+    # Ausgabe Dateinamen
+    print "Polygondatei: ", fileName
     
+    f = file(fileName).readlines()
+    lis = []
+    
+    for i in f: 
+        n = i.split()
+        lis.append(map(float, n))
+    return lis
+
+def localToGlobal(lis, min=0):
+    "Von lokalem in globales Koordinatensystem umwandeln"
+    for i in lis:
+        x = min + i[0] * WIDTH
+        y = min + HEIGHT - i[1] * HEIGHT
+        i[0] = x
+        i[1] = y
+
 
 if __name__ == "__main__":
     # check parameters
     if len(sys.argv) != 3:
         print "morph.py firstPolygon secondPolygon"
         sys.exit(-1)
+
+    # - read in polygons -
+    polygonA = readFile(sys.argv[1])
+    polygonZ = readFile(sys.argv[2])
     
-    # Ausgabe Dateinamen
-    print "Polygondatei 1: ", sys.argv[1]
-    print "Polygondatei 2: ", sys.argv[2]
-
-    # TODOS:
-    # - read in polygons
     # - transform from local into global coordinate system 
+    localToGlobal(polygonA)
+    localToGlobal(polygonZ)
+    
     # - make both polygons contain same number of points
+    
+    
+    # polygonA als Anfang setzen
+    polygon = polygonA   
 
-    # create main window
+    # GUI
     mw = Tk()
     mw._root().wm_title("Morphing")
 
@@ -96,8 +121,9 @@ if __name__ == "__main__":
     eFr.pack(side="right")
     bExit = Button(eFr, text="Quit", command=(lambda root=mw: quit(root)))
     bExit.pack()
+    
+    # Objekte zeichnen
     draw()
     
     # start
-    mw.mainloop()
-    
+    mw.mainloop() 
