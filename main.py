@@ -5,4 +5,3 @@ Created on 09.04.2013
 '''
    
 print 'Hello World!'  
-print 'Hello Doppelt'
