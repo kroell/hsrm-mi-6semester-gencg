@@ -25,7 +25,7 @@ elementList = [] # list of elements (used by Canvas.delete(...))
 #polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
 
 time = 0
-dt = 0.001
+dt = 0.01
 
 def drawObjects():
     """ draw polygon and points """
@@ -54,31 +54,41 @@ def draw():
 def forward():
     "Vorwaerts morphen"
     global time
-    print polygonA
-    print polygonZ 
-    
+    time = 0
+    print "P-f: ", polygon
+    print "A-f: ", polygonA
+    print "Adc-b: ", polygonAdc
+    print "Z-f: ", polygonZ
+    print "Zdc-f: ", polygonZdc
+
     while(time < 1):
         time += dt
         # TODO: interpolate 
         for i in range(len(polygon)): 
-            polygon[i][0] = (1 - time) * polygonA[i][0] + time * polygonZ[i][0]
-            polygon[i][1] = (1 - time) * polygonA[i][1] + time * polygonZ[i][1]
+            polygon[i][0] = (1 - time) * polygonAdc[i][0] + time * polygonZdc[i][0]
+            polygon[i][1] = (1 - time) * polygonAdc[i][1] + time * polygonZdc[i][1]
             
         draw()
 
 def backward():
     "Rueckwaerts morphen"
     global time
-    print polygonA
-    print polygonZ
+    time = 0
+    print time
+    print "P-b: ", polygon
+    print "A-b: ", polygonA
+    print "Adc-b: ", polygonAdc
+    print "Z-b: ", polygonZ
+    print "Zdc-b: ", polygonZ
+  
     #polygon = polygonA
-    #while(time > 0):
-    #    time -= dt
-    #    for i in range(len(polygon)): 
-    #        polygon[i][0] = (1 - time) * polygonZ[i][0] + time * polygonA[i][0]
-    #        polygon[i][1] = (1 - time) * polygonZ[i][1] + time * polygonA[i][1]
+    while(time < 1):
+        time += dt
+        for i in range(len(polygon)): 
+            polygon[i][0] = (1 - time) * polygonZdc[i][0] + time * polygonAdc[i][0]
+            polygon[i][1] = (1 - time) * polygonZdc[i][1] + time * polygonAdc[i][1]
     
-    draw()
+        draw()
 
 
 def readFile(fileName):
@@ -92,7 +102,7 @@ def readFile(fileName):
     for i in f: 
         n = i.split()
         #x,y Koordinaten als float in Liste schreiben
-        lis.append(map(float, n))
+        lis.append(map(float, n[::]))
     return lis
 
 
@@ -130,8 +140,14 @@ if __name__ == "__main__":
         polygonA.append(polygonA[0])
     
     # polygonA als Anfang setzen
-    polygon = polygonA
+    # kopie von A
+    polygon = polygonA[:]
     
+    polygonAdc = copy.deepcopy(polygonA)
+    polygonZdc = copy.deepcopy(polygonZ)
+
+    if polygon is polygonA:
+        print "Polygon und Polygon A sind identisch"
     
     # GUI
     mw = Tk()
