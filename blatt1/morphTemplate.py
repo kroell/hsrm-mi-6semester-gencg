@@ -58,6 +58,7 @@ def forward():
     while(time < 1):
         time += DT
         # interpolate 
+        # Grundlage: p(t) = (1-t) * p1 + t * p2 
         for i in range(len(polygon)): 
             polygon[i][0] = (1 - time) * polygonAdc[i][0] + time * polygonZdc[i][0]
             polygon[i][1] = (1 - time) * polygonAdc[i][1] + time * polygonZdc[i][1]
@@ -70,7 +71,8 @@ def backward():
   
     while(time < 1):
         time += DT
-        # interpolate 
+        # interpolate
+        # Grundlage: p(t) = (1-t) * p1 + t * p2 
         for i in range(len(polygon)): 
             polygon[i][0] = (1 - time) * polygonZdc[i][0] + time * polygonAdc[i][0]
             polygon[i][1] = (1 - time) * polygonZdc[i][1] + time * polygonAdc[i][1]
