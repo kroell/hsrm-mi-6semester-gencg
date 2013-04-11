@@ -25,8 +25,10 @@ CCOLOR = "#0000FF" # blue
 
 ELEMENT_LIST = [] # list of elements (used by Canvas.delete(...))
 
-#polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
-#time = 0
+polygon = [[50,50],[350,50],[350,350],[50,350],[50,50]]
+polygonA = []
+polygonB = []
+time = 0
 
 DT = 0.01
 
@@ -53,31 +55,38 @@ def draw():
 
 def forward():
     "Vorwaerts morphen"
+    global time, polygon
     time = 0
-
     while(time < 1):
         time += DT
+        points = []
         # interpolate 
-        # Grundlage: p(t) = (1-t) * p1 + t * p2 
         for i in range(len(polygon)): 
-            polygon[i][0] = (1 - time) * polygonAdc[i][0] + time * polygonZdc[i][0]
-            polygon[i][1] = (1 - time) * polygonAdc[i][1] + time * polygonZdc[i][1]
-            
+            points.append([interpolate(polygonA[i][0], polygonZ[i][0], time) , interpolate(polygonA[i][1], polygonZ[i][1], time)])
+            #polygon[i][0] = interpolate(polygonA[i][0], polygonZ[i][0], time) 
+            #polygon[i][1] = interpolate(polygonA[i][1], polygonZ[i][1], time)
+        polygon = points
         draw()
 
 def backward():
     "Rueckwaerts morphen"
+    global time, polygon
     time = 0
-  
     while(time < 1):
         time += DT
+        points = []
         # interpolate
-        # Grundlage: p(t) = (1-t) * p1 + t * p2 
-        for i in range(len(polygon)): 
-            polygon[i][0] = (1 - time) * polygonZdc[i][0] + time * polygonAdc[i][0]
-            polygon[i][1] = (1 - time) * polygonZdc[i][1] + time * polygonAdc[i][1]
-    
+        for i in range(len(polygon)):
+            points.append([interpolate(polygonZ[i][0], polygonA[i][0], time), interpolate(polygonZ[i][1], polygonA[i][1], time)])
+            #polygon[i][0] = interpolate(polygonZ[i][0], polygonA[i][0], time) 
+            #polygon[i][1] = interpolate(polygonZ[i][1], polygonA[i][1], time)
+        polygon = points
         draw()
+
+def interpolate(p,q,time):
+    "Grundlage: p(t) = (1-t) * p + t * q"
+    return (1 - time) * p + time * q
+    
 
 def readFile(fileName):
     "Datei einlesen und Inhalt als Liste [[x,y]] zurueckgeben"
@@ -91,6 +100,7 @@ def readFile(fileName):
         n = i.split()
         #x,y Koordinaten als float in Liste schreiben
         lis.append(map(float, n))
+        
     return lis
 
 def localToGlobal(lis):
@@ -112,10 +122,12 @@ if __name__ == "__main__":
 
     # - read in polygons -
     polygonA = readFile(sys.argv[1])
+    polygonAcopy = readFile(sys.argv[1])
     polygonZ = readFile(sys.argv[2])
     
     # - transform from local into global coordinate system 
     localToGlobal(polygonA)
+    localToGlobal(polygonAcopy)
     localToGlobal(polygonZ)
     
     # - make both polygons contain same number of points
@@ -125,12 +137,8 @@ if __name__ == "__main__":
         polygonA.append(polygonA[0])
     
     # polygonA als Anfang setzen
-    polygon = polygonA[:]
-    
-    # tiefe Kopie von A und Z erstellen
-    polygonAdc = copy.deepcopy(polygonA)
-    polygonZdc = copy.deepcopy(polygonZ)
-
+    polygon = polygonAcopy
+   
     # GUI
     mw = Tk()
     mw._root().wm_title("Morphing")
