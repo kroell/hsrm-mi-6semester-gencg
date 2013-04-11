@@ -7,10 +7,10 @@ Hochschule RheinMain, Medieninformatik
  
 @author: soerenkroell
 '''
-
+ 
 #!/usr/bin/python
 # -*-coding: utf-8 -*-
-
+ 
 
 from Tkinter import *
 from Canvas import *
