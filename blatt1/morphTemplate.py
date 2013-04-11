@@ -1,5 +1,6 @@
 '''
 Created on 09.04.2013
+Finished 11.04.2013
 
 Generative Computergrafik, Uebungsblatt 1, Aufgabe 5
 Hochschule RheinMain, Medieninformatik
