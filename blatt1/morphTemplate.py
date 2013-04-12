@@ -60,6 +60,9 @@ def forward():
     time = 0
     while(time < 1):
         time += DT
+        # Alternative
+        polygon = [(p[0]*(1-time)+q[0]*time, p[1]*(1-time)+q[1]*time ) for (p,q) in zip(polygonA, polygonZ)]
+        """
         points = []
         # interpolate 
         for i in range(len(polygon)): 
@@ -67,6 +70,7 @@ def forward():
             #polygon[i][0] = interpolate(polygonA[i][0], polygonZ[i][0], time) 
             #polygon[i][1] = interpolate(polygonA[i][1], polygonZ[i][1], time)
         polygon = points
+        """
         draw()
 
 def backward():
