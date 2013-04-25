@@ -53,13 +53,11 @@ class Camera(object):
         self.__hRes = hRes
         self.__c_a = Color([0.6,0.6,0.6])
         self.__c_in = self.__light.getColor()
-        self.__maxdist = float('inf')
         
         # Kamera initialiseren
         self.initialCamera()
         # Szene rendern
-        #self.renderScene()
-        self.renderSceneWithReflection()
+        self.renderScene()
         
     def initialCamera(self):
         '''
@@ -112,43 +110,6 @@ class Camera(object):
         @param origin: Objekt-Schnittpunkt
         '''
         return Ray(origin, self.__light.getPosition() - origin)
-    
-    def handleRay(self, ray, level=0):
-        color = self.__backgroundColor
-        
-        maxdist = float('inf')
-        for single_object in self.__objectlist:
-            hitdist = single_object.intersectionParameter(ray)
-            if hitdist > 0 and hitdist < maxdist:
-                baseColor = single_object.material.baseColor
-                point = ray.origin + ray.direction.scale(hitdist)
-                normal = single_object.normalAt(point)  
-                origin = ray.pointAtParameter(hitdist)
-                lightray = self.calcLightRay(origin)
-                
-                if not self.calcShadow(lightray, single_object, self.__objectlist):
-                    #kein Schatten
-                    if level == 0:
-                        color = single_object.material.calcColor(baseColor, self.__c_a, self.__c_in, lightray.direction, normal, ray.direction).colorToRGBTuple()
-                    else:
-                        print "else"
-                        colornew = single_object.material.calcColor(baseColor, self.__c_a, self.__c_in, lightray.direction, normal, ray.direction)
-                        test = single_object.material.calcReflect(ray.direction, normal)
-                        color = colornew + Color(test)
-                else:
-                    #Schatten
-                    color = single_object.material.calcAmbient(baseColor, self.__c_a).colorToRGBTuple()
-                maxdist = hitdist
-        
-        return color
-                        
-    
-    def renderSceneWithReflection(self):
-        for x in range(self.__wRes):
-            for y in range(self.__hRes):
-                ray = self.calcRay(x,y)
-                color = self.handleRay(ray)
-                self.__image.putpixel((x,y), color)
     
     def renderScene(self):    
         '''

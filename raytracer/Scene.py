@@ -16,7 +16,7 @@ from raytracer.PIL import Image
 BLACK = (0,0,0)
 WHITE = (255,255,255)
 
-IMG_WIDTH  = 320.0 # Breite
+IMG_WIDTH = 320.0 # Breite
 IMG_HEIGHT = 240.0 # Hoehe
 FOW = 45 # Field of View
 ASPECT_RATIO = IMG_WIDTH/ IMG_HEIGHT #Seitenverhaeltniss

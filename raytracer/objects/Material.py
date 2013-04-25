@@ -46,7 +46,10 @@ class Material(object):
         '''
         k_d = colorDiffus * self.diffusCoefficient
         skalar = lightray.dot(normal)
-        return Color(c_in.vectorMul(k_d) * skalar)
+        if skalar >= 0:
+            return Color(c_in.vectorMul(k_d) * skalar)
+        else:
+            return 0
     
     def calcLr(self, lightray, normal):
         '''
@@ -67,7 +70,11 @@ class Material(object):
         '''
         k_s = colorSpecular * self.specularCoefficient
         lr = self.calcLr(lightray, normal) 
-        return c_in.vectorMul(k_s) * lr.dot(direction * (-1)) ** self.n
+        skalar = lr.dot(direction * (-1))
+        if skalar >= 0:
+            return c_in.vectorMul(k_s) * lr.dot(direction * (-1)) ** self.n
+        else:
+            return 0
     
     def calcReflect(self, direction, normal):
         return Color(direction - (2 * direction.cross(normal)).vectorMul(normal))
@@ -82,6 +89,16 @@ class Material(object):
         @param normal: Normalen Vektor des Objekts
         @param direction: Richtung des Strahls von der Kamera aus
         '''
-        return Color(self.calcAmbient(colorObject, c_a) + self.calcDiffus(colorObject, c_in, lightray, normal) + self.calcSpecular(colorObject, c_in, direction, lightray, normal))
+        ambient = self.calcAmbient(colorObject, c_a)
+        diffus = self.calcDiffus(colorObject, c_in, lightray, normal)
+        spec = self.calcSpecular(colorObject, c_in, direction, lightray, normal)
+
+        if diffus == 0 and spec != 0:
+            return Color(ambient + spec)
         
+        if spec == 0 and diffus !=0:
+            return Color(ambient + diffus)
+        
+        if spec != 0 and diffus != 0:
+            return Color(ambient + diffus + spec)       
         
