@@ -8,7 +8,7 @@ Hochschule RheinMain, Medieninformatik
 @author: Soeren Kroell
 '''
 
-from raytracer.objects import *
+from raytracer.objects import Vector
 
 
 class Color(Vector):

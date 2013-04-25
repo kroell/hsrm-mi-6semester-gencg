@@ -9,7 +9,6 @@ Hochschule RheinMain, Medieninformatik
 '''
 
 from raytracer.objects import *
-#from raytracer.scene import *
 from raytracer.PIL import Image
 
 import math 

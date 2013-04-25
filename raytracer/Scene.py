@@ -8,9 +8,8 @@ Hochschule RheinMain, Medieninformatik
 @author: Soeren Kroell
 '''
 
-from raytracer.objects import *
+from raytracer.objects import Color, Sphere, Point, Material, Plane, Vector, Light, Camera
 from raytracer.PIL import Image
-
 
 # Konstanten definieren
 BLACK = (0,0,0)

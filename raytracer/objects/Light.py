@@ -8,8 +8,7 @@ Hochschule RheinMain, Medieninformatik
 @author: Soeren Kroell
 '''
 
-from raytracer.objects import *
-from Color import *
+from raytracer.objects import Point, Color
 
 class Light(object):
     '''
