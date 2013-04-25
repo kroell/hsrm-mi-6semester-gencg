@@ -11,4 +11,5 @@ Das gerenderte Bild wird anschliessend im Verzeichnis 'img_export' gespeichert. 
 
 
 Eine Beispielszene sieht wie folgt aus:
-https://github.com/kroell/hsrm-mi-6semester-gencg/blob/master/raytracer/img_export/raytracer1280.png
+
+<img src="https://github.com/kroell/hsrm-mi-6semester-gencg/blob/master/raytracer/img_export/raytracer1280.png" />
