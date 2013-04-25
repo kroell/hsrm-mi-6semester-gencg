@@ -1,7 +1,7 @@
 Python - Raytracer
 ================= 
 
-Raytacer geschrieben in Python. Realisiert wird eine Szene mit drei Kugeln, einer Ebene und einer Lichtquelle rechts oben.
+Dies ist ein einfacher Raytacer geschrieben in Python. Realisiert wird eine Szene mit drei Kugeln, einer Ebene und einer Lichtquelle rechts oben.
 
 Zum Start des Programm´s muss die Datei 'Scene.py' ausgefuehrt werden.
 
