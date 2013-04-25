@@ -30,6 +30,8 @@ class Material(object):
     def calcAmbient(self, colorAmbient, c_a):
         '''
         Berechnung ambienter Anteil nach Phong
+        @param colorAmbient: Farbe des Objekts
+        @param c_a: Umgebungslichtfarbe
         '''
         k_a = colorAmbient * self.ambientCoefficient
         return Color(c_a.vectorMul(k_a))
@@ -37,6 +39,10 @@ class Material(object):
     def calcDiffus(self, colorDiffus, c_in, lightray, normal):
         '''
         Berechnung diffuser Anteil nach Phong
+        @param colorDiffus: Farbe des Objekts
+        @param c_in: Farbe der Lichtquelle
+        @param ligthray: Strahlrichtung zur Lichtquelle
+        @param normal: Normalen Vektor des Objekts
         '''
         k_d = colorDiffus * self.diffusCoefficient
         skalar = lightray.dot(normal)
@@ -45,12 +51,19 @@ class Material(object):
     def calcLr(self, lightray, normal):
         '''
         Berechnung LR und Rueckgabe eines Vektors
+        @param ligthray: Strahlrichtung zur Lichtquelle
+        @param normal: Normalen Vektor des Objekts
         '''
         return (lightray - 2 * (lightray.dot(normal) * normal)) * (-1)
     
     def calcSpecular(self, colorSpecular, c_in, direction, lightray, normal):
         '''
         Berechnung des spekularen Anteils nach Phong
+        @param colorSpecular: Farbe des Objekts
+        @param c_in: Farbe der Lichtquelle
+        @param direction: Richtung des Strahls von der Kamera aus
+        @param ligthray: Strahlrichtung zur Lichtquelle
+        @param normal: Normalen Vektor des Objekts
         '''
         k_s = colorSpecular * self.specularCoefficient
         lr = self.calcLr(lightray, normal) 
@@ -59,6 +72,12 @@ class Material(object):
     def calcColor(self, colorObject, c_a, c_in, lightray, normal, direction):
         '''
         Berechnung der Farbe -> ambient + diffus + specular
+        @param colorObject: Farbe des Objekts
+        @param c_a: Umgebungslicht
+        @param c_in: Farbe der Lichtquelle
+        @param ligthray: Strahlrichtung zur Lichtquelle
+        @param normal: Normalen Vektor des Objekts
+        @param direction: Richtung des Strahls von der Kamera aus
         '''
         return Color(self.calcAmbient(colorObject, c_a) + self.calcDiffus(colorObject, c_in, lightray, normal) + self.calcSpecular(colorObject, c_in, direction, lightray, normal))
         
