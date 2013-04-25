@@ -1,13 +1,19 @@
 '''
-Created on 16.04.2013
+Created on 25.04.2013
 
-@author: soerenkroell
+Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
+RAYTRACER
+Hochschule RheinMain, Medieninformatik
+
+@author: Soeren Kroell
 '''
 
 from raytracer.objects import *
+#from raytracer.scene import *
 from raytracer.PIL import Image
 
-import sys
+import math 
+
 
 class Camera(object):
     '''
@@ -17,14 +23,12 @@ class Camera(object):
     __f = Vector([0,0,0])
     __s = Vector([0,0,0])
     __u = Vector([0,0,0])
-    __wRes = 320
-    __hRes = 240
     __pixelWidth = 0
     __pixelHeight = 0
     
-    def __init__(self, up, c, e, fow, aspectRatio, backgroundColor, image, objectlist, light):
+    def __init__(self, up, c, e, fow, aspectRatio, backgroundColor, image, objectlist, light, wRes, hRes):
         '''
-        @param up: wo ist oben
+        @param up: Vektor nach oben
         @param c: 
         @param e: Position der Kamera
         @param fow: Oeffnungswinkel der Kamera
@@ -33,6 +37,9 @@ class Camera(object):
         @param image: Image Objekt
         @param objectlist: Liste mit allen Objekten, die von der Kamera angezeigt werden sollen
         @param light: Lichtquelle
+        @param wRes: Breite der Aufloesung
+        @param hRes: Hoehe der Aufloesung
+        @param c_a: Umgebungslichtfarbe
         '''
         self.__up = up
         self.__c = c 
@@ -43,6 +50,10 @@ class Camera(object):
         self.__image = image
         self.__objectlist = objectlist
         self.__light = light
+        self.__wRes = wRes
+        self.__hRes = hRes
+        self.__c_a = Color([0.6,0.6,0.6])
+        
         # Kamera initialiseren
         self.initialCamera()
         # Szene rendern
@@ -77,8 +88,10 @@ class Camera(object):
     
     def calcShadow(self, lightRay, object, objectlist):
         '''
-        Wird ein Strahl von einem Objekt geschnitten wird true zurueck gegeben, ansonsten false.
+        Berechnung der Schatten mit Abhaengigkeit des aktuellen Objekts
         @param lightRay: Strahl vom Objekt-Schnittpunkt in Richtung Lichtquelle
+        @param object: Aktuelles Objekt
+        @param objectlist: Liste aller Objekte in der Szene
         '''
         for single_object in objectlist:
             hit = single_object.intersectionParameter(lightRay)
@@ -88,81 +101,60 @@ class Camera(object):
             # Schatten Plane
             elif hit > 0.0001:
                 return True
-                
+        # Kein Schatten 
         return False
     
     def calcLightRay(self, origin):
         '''
-        gibt einen Strahl vom Objekt-Schnittpunkt zur Lichtquelle zurueck
+        Gibt einen Strahl vom Objekt-Schnittpunkt zur Lichtquelle zurueck
         @param origin: Objekt-Schnittpunkt
         '''
         return Ray(origin, self.__light.getPosition() - origin)
     
-    def calcColor(self,rayDirection, single_object, point, normal, lightray):
-        color = single_object.material.baseColorAt(point)
-        
-        if not self.calcShadow(lightray):
-            color += single_object.material.renderColor(lightray, normal, self.__light.color, rayDirection)
-        
-        return color
-
-    def renderColor(self):
-        pass
-        
     def renderScene(self):    
         '''
-        Ray Casting Algorithmus
+        Eigentliche Berechnung der Szene. 
         '''
-        # fuer jedes x/y
+        # fuer jedes x/y der gegebenen Aufloesung
         for x in range(self.__wRes):
             for y in range(self.__hRes):
                 ray = self.calcRay(x,y)
                 maxdist = float('inf')
                 color = self.__backgroundColor
+                # Fuer jedes Objekt einzeln pruefen
                 for single_object in self.__objectlist:
                     hitdist = single_object.intersectionParameter(ray)
                     if hitdist > 0 and hitdist < maxdist:
+                        # Farben
+                        baseColor = single_object.material.baseColor
+                        c_in = self.__light.getColor()
+                        # Schattierung berechnen
                         point = ray.origin + ray.direction.scale(hitdist)
                         normal = single_object.normalAt(point)  
-                        # Schattierung berechnen
                         origin = ray.pointAtParameter(hitdist)
                         lightray = self.calcLightRay(origin)
-                        #color = single_object.material.baseColorAt(point)
+                        
                         if not self.calcShadow(lightray, single_object, self.__objectlist):
-                            #color += single_object.material.renderColor(lightray, normal, ray.direction)
-                            #color = single_object.color()
-                            #print single_object.material.baseColor
-                            color = single_object.material.baseColor.colorToRGBTuple()    
-                                               
+                            '''
+                            Unschattierter Bereich -> ambient + diffus + spektular Anteil
+                            '''
+                            color = single_object.material.calcColor(baseColor, self.__c_a, c_in, lightray.direction, normal, ray.direction).colorToRGBTuple()
+    
                         else:
-                            print "bla"
-                            '''try:
-                                colornew = single_object.material.calcAmbient(single_object.material.baseColor)
-                                color = colornew.colorToRGBTuple()
-                            except Exception, err:
-                                sys.stderr.write('ERROR: %s\n' % str(err))'''
-                                    
-                            color = self.__light.getColor()
+                            '''
+                            Schattierter Bereich -> nur ambienter Anteil
+                            '''
+                            color = single_object.material.calcAmbient(baseColor, self.__c_a).colorToRGBTuple()
+ 
                         maxdist = hitdist
+                # X/Y- und Farbwerte in Bild speichern
                 self.__image.putpixel((x,y), color)
-        self.__image.show()
-        self.__image.save("raytracer","PNG")
-    
-        
-    def getF(self):
-        return self.__f
-    
-    def getS(self):
-        return self.__s
-    
-    def getU(self):
-        return self.__u
-    
-    def getRay(self):
-        return self.__ray
     
     def getImage(self):
-        return Image(self.__image)
+        '''
+        Gibt das erzeugte Image-Objekt zurueck
+        '''
+        return self.__image
     
     def __repr__(self):
         return 'f:%s, s:%s, u:%s, field of view:%s, aspect ratio:%s' % (repr(self.__f), repr(self.__s), repr(self.__u), repr(self.__fow), repr(self.__aspectRatio))

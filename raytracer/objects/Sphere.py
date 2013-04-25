@@ -1,24 +1,26 @@
 '''
-Created on 12.04.2013
+Created on 25.04.2013
 
 Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
 RAYTRACER
 Hochschule RheinMain, Medieninformatik
 
-@author: soerenkroell
+@author: Soeren Kroell
 '''
 
+from raytracer.objects import *
 import math
-from Point import *
-from Material import *
 
 class Sphere(object):
-    def __init__(self, center, radius, color, material):
+    '''
+    Klasse zum Erstellen eines Kreises
+    '''
+    
+    def __init__(self, center, radius, material):
         # point
         self.center = center 
         # scalar
         self.radius = radius 
-        self.__color = color
         self.material = material if material else Material()
 
     def __repr__(self):
@@ -27,7 +29,6 @@ class Sphere(object):
     def intersectionParameter(self, ray):
         co = self.center - ray.origin
         v = co.dot(ray.direction)
-        #print "v", v
         discriminant = (self.radius * self.radius) - (co.dot(co) - v*v)
         if discriminant < 0:
             return None
@@ -35,10 +36,13 @@ class Sphere(object):
             return v - math.sqrt(discriminant)
 
     def normalAt(self, p):
+        '''
+        Gibt den Normalenvektor an Punkt p zurueck
+        '''
         return (p - self.center).normalize()
-    
-    def color(self):
-        return self.__color
 
     def getCenter(self):
+        '''
+        Gibt den Mittelpunkt der Ebene zurueck
+        '''
         return Point(self.center)

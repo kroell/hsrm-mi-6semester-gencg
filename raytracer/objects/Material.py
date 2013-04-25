@@ -1,61 +1,65 @@
 '''
-Created on 20.04.2013
+Created on 25.04.2013
 
-@author: soerenkroell
+Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
+RAYTRACER
+Hochschule RheinMain, Medieninformatik
+
+@author: Soeren Kroell
 '''
 
 from Color import *
-import math
 
 class Material(object):
+    '''
+    Materialklasse fuer Objekte mit Berechnungen nach Phong-Beleuchtungsmodell
+    '''
     GRAY = Color([0.5,0.5,0.5])
     WHITE = Color([1,1,1])
     BLACK = Color([0,0,0])
     AMBIENT = Color([0.3, 0.3, 0.3])
     
-    def __init__(self, baseColor, ambientCoefficient=0.45, glossiness=0.1):
+    def __init__(self, baseColor, ambientCoefficient=0.8, diffusCoefficient=0.8, specularCoefficient=0.2, glossiness=0.1):
         self.baseColor = baseColor
         self.glossiness = glossiness
         self.ambientCoefficient = ambientCoefficient 
+        self.diffusCoefficient = diffusCoefficient
+        self.specularCoefficient = specularCoefficient
+        self.n = 3
     
-    def calcAmbient(self, colorAmbient):
+    def calcAmbient(self, colorAmbient, c_a):
         '''
-        Ambienter Anteil berechnen
+        Berechnung ambienter Anteil nach Phong
         '''
-        #print colorAmbient
-        return Color(colorAmbient * self.ambientCoefficient)
-        
-        
+        k_a = colorAmbient * self.ambientCoefficient
+        return Color(c_a.vectorMul(k_a))
+    
+    def calcDiffus(self, colorDiffus, c_in, lightray, normal):
         '''
-        self.ambientColor = ambientColor if ambientColor else self.AMBIENT
-        self.diffuseColor = diffuseColor if diffuseColor else self.ambientColor
-        self.specularColor = specularColor if specularColor else Color([glossiness, glossiness, glossiness])
+        Berechnung diffuser Anteil nach Phong
+        '''
+        k_d = colorDiffus * self.diffusCoefficient
+        skalar = lightray.dot(normal)
+        return Color(c_in.vectorMul(k_d) * skalar)
+    
+    def calcLr(self, lightray, normal):
+        '''
+        Berechnung LR und Rueckgabe eines Vektors
+        '''
+        return (lightray - 2 * (lightray.dot(normal) * normal)) * (-1)
+    
+    def calcSpecular(self, colorSpecular, c_in, direction, lightray, normal):
+        '''
+        Berechnung des spekularen Anteils nach Phong
+        '''
+        k_s = colorSpecular * self.specularCoefficient
+        lr = self.calcLr(lightray, normal) 
+        return c_in.vectorMul(k_s) * lr.dot(direction * (-1)) ** self.n
+    
+    def calcColor(self, colorObject, c_a, c_in, lightray, normal, direction):
+        '''
+        Berechnung der Farbe -> ambient + diffus + specular
+        '''
+        return Color(self.calcAmbient(colorObject, c_a) + self.calcDiffus(colorObject, c_in, lightray, normal) + self.calcSpecular(colorObject, c_in, direction, lightray, normal))
         
-        self.glossiness = glossiness
-        self.n = 64 * glossiness + 1 
-        self.specConst = (self.n + 2) / (math.pi * 2)
         
-        self.specularBase = self.specularColor * self.specConst
-    
-    def baseColorAt(self, point):
-        return self.ambientColor * self.AMBIENT
-    
-    def renderColor(self, lightRay, normal, rayDirection):
-        lightColor = Color([1,1,1])
-        color = self.BLACK
-        
-        diffuseFactor = lightRay.direction.dot(normal)
-    
-        if diffuseFactor > 0:
-            print self.diffuseColor
-            print lightColor
-            color += self.diffuseColor * lightColor * diffuseFactor
-            reflectedLight = (lightRay.direction).reflect(normal)
-            specularFactor = reflectedLight.dot(-rayDirection)
-            
-            if specularFactor > 0:
-                color += self.specularBase * lightColor * (specularFactor**self.n)
-                
-        return color
-    '''
-    

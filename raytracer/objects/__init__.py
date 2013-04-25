@@ -3,7 +3,9 @@ from Point import *
 from Sphere import *
 from Plane import *
 from Triangle import *
-from Light import *
 from Ray import *
-from Color import *
 from CheckerboardMaterial import *
+from Color import *
+from Light import *
+from Material import *
+from Camera import *

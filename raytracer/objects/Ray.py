@@ -1,23 +1,24 @@
 '''
-Created on 12.04.2013
+Created on 25.04.2013
 
 Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
 RAYTRACER
 Hochschule RheinMain, Medieninformatik
 
-@author: soerenkroell
+@author: Soeren Kroell
 '''
-
-# Klasse zum Erstellen eines Strahlobjekts      
+     
 class Ray(object):
+    '''
+    Klasse zum Erstellen eines Strahls
+    '''
     
     def __init__(self, origin, direction):
         'Konstruktor unter Mitgabe von origin und direction'
         # point
         self.origin = origin 
-        # vector
+        # normalisierter vector
         self.direction = direction.normalize() 
-        #self.direction = direction # vector
 
     def __repr__(self):
         'Gibt Origin und Direction des Strahls zurueck'

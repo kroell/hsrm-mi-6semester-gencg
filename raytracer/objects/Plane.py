@@ -1,16 +1,23 @@
 '''
-Created on 16.04.2013
+Created on 25.04.2013
 
-@author: soerenkroell
+Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
+RAYTRACER
+Hochschule RheinMain, Medieninformatik
+
+@author: Soeren Kroell
 '''
 
-from Material import *
+from raytracer.objects import *
 
 class Plane(object):
-    def __init__(self, point, normal, color, material):
+    '''
+    Klasse zum Erstellen einer Ebene
+    '''
+    
+    def __init__(self, point, normal, material):
         self.point = point # point
         self.normal = normal.normalize() # vector
-        self.__color = color
         self.material = material if material else Material()
 
     def __repr__(self):
@@ -26,7 +33,8 @@ class Plane(object):
             return None
 
     def normalAt(self, p):
+        '''
+        Gibt den normalen Vektor an Punkt p zurueck
+        '''
         return self.normal
     
-    def color(self):
-        return self.__color

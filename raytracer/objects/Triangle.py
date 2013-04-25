@@ -1,12 +1,18 @@
 '''
-Created on 16.04.2013
+Created on 25.04.2013
 
-@author: soerenkroell
+Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
+RAYTRACER
+Hochschule RheinMain, Medieninformatik
+
+@author: Soeren Kroell
 '''
 
-
-
 class Triangle(object):
+    '''
+    Klasse zum Erstellen eines Dreiecks
+    '''
+
     def __init__(self, a, b, c, color):
         self.a = a # point
         self.b = b # point

@@ -1,21 +1,34 @@
 '''
-Created on 20.04.2013
+Created on 25.04.2013
 
-@author: soerenkroell
+Generative Computergrafik, Uebungsblatt 2, Aufgabe 1
+RAYTRACER
+Hochschule RheinMain, Medieninformatik
+
+@author: Soeren Kroell
 '''
 
-from raytracer.objects import Point
+from raytracer.objects import *
+from Color import *
 
 class Light(object):
-    '''Lichtklasse'''
+    '''
+    Klasse zum Erstellen einer Lichtquelle
+    '''
     
-    def __init__(self, position, color, ):
+    def __init__(self, position, color ):
         self.__position = position #Point
         self.color = color
     
     def getPosition(self):
+        '''
+        Gibt die Position der Lichtquelle zurueck
+        '''
         return Point(self.__position)
     
     def getColor(self):
-        return self.color
+        '''
+        Gibt den Farbwert der Lichquelle zurueck
+        '''
+        return Color(self.color)
     
