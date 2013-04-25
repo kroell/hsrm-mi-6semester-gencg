@@ -69,6 +69,9 @@ class Material(object):
         lr = self.calcLr(lightray, normal) 
         return c_in.vectorMul(k_s) * lr.dot(direction * (-1)) ** self.n
     
+    def calcReflect(self, direction, normal):
+        return Color(direction - (2 * direction.cross(normal)).vectorMul(normal))
+    
     def calcColor(self, colorObject, c_a, c_in, lightray, normal, direction):
         '''
         Berechnung der Farbe -> ambient + diffus + specular
