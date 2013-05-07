@@ -1,7 +1,7 @@
 from Tkinter import *
 from Canvas import *
 import sys
-import whrandom
+#import whrandom
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
@@ -42,8 +42,6 @@ def rotYn():
     can.delete(*pointList)
     draw()
 
-
-# Berechnen Sie die Boundingbox des eingelesenen Modells.
 def createBoundingBox(points):
     "Bounding Box erstellen indem die min und max Werte des Modells ausgerechnet werden"
     
