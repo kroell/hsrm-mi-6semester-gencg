@@ -22,11 +22,9 @@ def quit(root=None):
 
 def draw():
     """ draw points """
-    for i in range(1,NOPOINTS):
-        x, y = whrandom.randint(1,WIDTH), whrandom.randint(1,HEIGHT)
-        p = can.create_oval(x-HPSIZE, y-HPSIZE, x+HPSIZE, y+HPSIZE, fill=COLOR, outline=COLOR)
-        
-        pointList.insert(0,p)
+    for point in pointList:
+        x,y = point
+        can.create_oval(x-HPSIZE, y-HPSIZE, x+HPSIZE, y+HPSIZE, fill=COLOR, outline=COLOR)
 
 def rotYp():
     """ rotate counterclockwise around y axis """
@@ -45,21 +43,63 @@ def rotYn():
     draw()
 
 
-def readFile(fileName):
-    "Datei einlesen und Inhalt als Liste [[x,y]] zurueckgeben"
-    # Ausgabe Dateinamen
-    print "Dateiname: ", fileName
+# Berechnen Sie die Boundingbox des eingelesenen Modells.
+def createBoundingBox(points):
+    "Bounding Box erstellen indem die min und max Werte des Modells ausgerechnet werden"
     
-    f = file(fileName).readlines()
-    lis = []
+    # Min-Werte berechnen
+    xMin = min([x[0] for x in points])
+    yMin = min([x[1] for x in points])
+    zMin = min([x[2] for x in points])
     
-    for i in f: 
-        n = i.split()
-        #x,y Koordinaten als float in Liste schreiben
-        lis.append(map(float, n))
-        
-    return lis
+    # Max-Werte berechnen
+    xMax = max([x[0] for x in points])
+    yMax = max([x[1] for x in points])
+    zMax = max([x[2] for x in points])
+    
+    return xMin, yMin, zMin, xMax, yMax, zMax
 
+# Verschieben Sie den Mittelpunkt der Boundingbox des Modells in den Ursprung
+def calcDeltas(boundingBox):
+    "Berechnen der Deltas, die zum verschieben der Bounding Box benoetigt werden"
+    xMin, yMin, zMin, xMax, yMax, zMax = boundingBox
+    
+    deltaX = calcDeltaHelper(xMin, xMax)
+    deltaY = calcDeltaHelper(yMin, yMax)
+    deltaZ = calcDeltaHelper(zMin, zMax)
+    
+    return deltaX, deltaY, deltaZ
+
+def calcDeltaHelper(min, max):
+    "Helper zum Berechnen der Delta Werte"
+    return min + ((max - min) / 2)
+
+def moveBoundingBox(deltaValues, points):
+    "Verschieben der Bounding Box durch Abzug der Delta Werte auf den jeweils x,y,z Werten"
+    deltaX, deltaY, deltaZ = deltaValues
+    movedX = [x[0] - deltaX for x in points]
+    movedY = [x[1] - deltaY for x in points]
+    movedZ = [x[2] - deltaZ for x in points]
+    
+    return zip(movedX, movedY, movedZ)
+
+def scaleBoundingBox(movedPoints):
+    "Skalieren der Bounding Box indem jeder x,y,z Wert durch den xMax oder yMax geteilt wird"
+    xMax = max([x[0] for x in movedPoints])
+    yMax = max([x[1] for x in movedPoints])
+    zMax = max([x[2] for x in movedPoints])
+    
+    if xMax > yMax:
+        div = xMax
+    else:
+        div = yMax
+
+    return [[x[0]/div, x[1]/div, x[2]/div] for x in movedPoints]
+
+def scaleFrame(scaledPoints):
+    "Punkte an Bildschirmaufloesung anpassen"
+    #print [[x[0] * WIDTH/2 + WIDTH/2, HEIGHT - (x[1] * HEIGHT/2 + HEIGHT/2)] for x in scaledPoints]
+    return [[x[0] * WIDTH/2 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2 + HEIGHT/2)] for x in scaledPoints]
 
 if __name__ == "__main__":
     #check parameters
@@ -67,8 +107,18 @@ if __name__ == "__main__":
         print "pointViewer.py"
         sys.exit(-1)
     
-    # Punktdatei einlesen
-    pointFile = readFile(sys.argv[1])
+    # Einlesen
+    print "Dateiname: ", sys.argv[1]
+    points = [map(float, x.split()) for x in file(sys.argv[1]).readlines()]
+    
+    # Bounding Box, verschieben zum Mittelpunkt, skalieren und anpassen an Aufloesung
+    deltaValues = calcDeltas(createBoundingBox(points))
+    movedPoints = moveBoundingBox(deltaValues, points)
+    scaledPoints = scaleBoundingBox(movedPoints)
+    finalPoints = scaleFrame(scaledPoints)
+
+    # Globale pointList neu setzen
+    pointList = finalPoints
 
     # create main window
     mw = Tk()
