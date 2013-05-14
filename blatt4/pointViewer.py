@@ -2,19 +2,16 @@ from Tkinter import *
 from Canvas import *
 import sys
 import math
-#import whrandom
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
 
 HPSIZE = 1 # double of point size (must be integer)
-COLOR = "#0000FF" # blue
+COLOR = "#ff6cbb" # blue
 
-NOPOINTS = 1000
+ALPHA = 10 * math.pi / 180 # Winkel fuer Drehung
 
-scaledPoints = []
-#finalPoints  = []
-pointList = [] # list of points (used by Canvas.delete(...))
+pointList = [] # list of points
 
 def quit(root=None):
     """ quit programm """
@@ -23,36 +20,31 @@ def quit(root=None):
     root._root().quit()
     root._root().destroy()
 
+
 def draw():
     """ draw points """
-    for point in pointList:
+    for item in can.find_all():
+        can.delete(item)
+    for point in scaleFrame(pointList):
         x,y = point
         can.create_oval(x-HPSIZE, y-HPSIZE, x+HPSIZE, y+HPSIZE, fill=COLOR, outline=COLOR)
 
+
 def rotYp():
-    """ rotate counterclockwise around y axis """
-    #global NOPOINTS
-    #NOPOINTS += 100
-    #print "In rotYp: ", NOPOINTS 
-    
-    global scaledPoints
+    """ rotate counterclockwise around y axis """    
+    global ALPHA
     global pointList
-    #global finalPoints
-    alpha = 10 * math.pi / 180
-    rotatedPoints = rotateYMatrix(alpha, scaledPoints)
-    finalPoints = scaleFrame(rotatedPoints)
-    pointList = finalPoints
-    
-    can.delete(*pointList)
+    pointList = rotateYMatrix(ALPHA, pointList)
     draw()
+
 
 def rotYn():
     """ rotate clockwise around y axis """
-    global NOPOINTS
-    NOPOINTS -= 100
-    print "In rotYn: ", NOPOINTS 
-    can.delete(*pointList)
+    global ALPHA
+    global pointList
+    pointList = rotateYMatrix(-ALPHA, pointList)
     draw()
+
 
 def createBoundingBox(points):
     "Bounding Box erstellen indem die min und max Werte des Modells ausgerechnet werden"
@@ -69,7 +61,7 @@ def createBoundingBox(points):
     
     return xMin, yMin, zMin, xMax, yMax, zMax
 
-# Verschieben Sie den Mittelpunkt der Boundingbox des Modells in den Ursprung
+
 def calcDeltas(boundingBox):
     "Berechnen der Deltas, die zum verschieben der Bounding Box benoetigt werden"
     xMin, yMin, zMin, xMax, yMax, zMax = boundingBox
@@ -80,9 +72,11 @@ def calcDeltas(boundingBox):
     
     return deltaX, deltaY, deltaZ
 
+
 def calcDeltaHelper(min, max):
     "Helper zum Berechnen der Delta Werte"
     return min + ((max - min) / 2)
+
 
 def moveBoundingBox(deltaValues, points):
     "Verschieben der Bounding Box durch Abzug der Delta Werte auf den jeweils x,y,z Werten"
@@ -92,6 +86,7 @@ def moveBoundingBox(deltaValues, points):
     movedZ = [x[2] - deltaZ for x in points]
     
     return zip(movedX, movedY, movedZ)
+
 
 def scaleBoundingBox(movedPoints):
     "Skalieren der Bounding Box indem jeder x,y,z Wert durch den xMax oder yMax geteilt wird"
@@ -106,23 +101,16 @@ def scaleBoundingBox(movedPoints):
 
     return [[x[0]/div, x[1]/div, x[2]/div] for x in movedPoints]
 
+
 def scaleFrame(scaledPoints):
     "Punkte an Bildschirmaufloesung anpassen"
-    print "scaleFrame: ", scaledPoints[:3]
-    #print [[x[0] * WIDTH/2 + WIDTH/2, HEIGHT - (x[1] * HEIGHT/2 + HEIGHT/2)] for x in scaledPoints]
     return [[x[0] * WIDTH/2.0 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2.0 + HEIGHT/2.0)] for x in scaledPoints]
 
 
 def rotateYMatrix(alpha,scaledPoints):
     "Matrix zum Rotieren um die Y-Achse"
-    
-#    x_new = [[math.cos(alpha) * x[0] for x in scaledPoints] + [math.sin(alpha) * x[2] for x in scaledPoints]]
- #   y_new = [1 * x[1] for x in scaledPoints] 
-  #  z_new = [[-math.sin(alpha) * x[0] for x in scaledPoints] + [math.cos(alpha) * x[2] for x in scaledPoints]]
-
-#    return [x_new,y_new,z_new]
-
     return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2]] for p in scaledPoints]
+
 
 if __name__ == "__main__":
     #check parameters
@@ -138,12 +126,9 @@ if __name__ == "__main__":
     deltaValues = calcDeltas(createBoundingBox(points))
     movedPoints = moveBoundingBox(deltaValues, points)
     scaledPoints = scaleBoundingBox(movedPoints)
-    print "scaledPoints: ", scaledPoints[:3]
-    finalPoints = scaleFrame(scaledPoints)
-    print "finalPoints: ", finalPoints[:3]
 
     # Globale pointList neu setzen
-    pointList = finalPoints
+    pointList = scaledPoints
 
     # create main window
     mw = Tk()
