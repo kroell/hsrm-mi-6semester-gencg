@@ -1,6 +1,7 @@
 from Tkinter import *
 from Canvas import *
 import sys
+import math
 #import whrandom
 
 WIDTH  = 400 # width of canvas
@@ -11,6 +12,8 @@ COLOR = "#0000FF" # blue
 
 NOPOINTS = 1000
 
+scaledPoints = []
+#finalPoints  = []
 pointList = [] # list of points (used by Canvas.delete(...))
 
 def quit(root=None):
@@ -28,9 +31,18 @@ def draw():
 
 def rotYp():
     """ rotate counterclockwise around y axis """
-    global NOPOINTS
-    NOPOINTS += 100
-    print "In rotYp: ", NOPOINTS 
+    #global NOPOINTS
+    #NOPOINTS += 100
+    #print "In rotYp: ", NOPOINTS 
+    
+    global scaledPoints
+    global pointList
+    #global finalPoints
+    alpha = 10 * math.pi / 180
+    rotatedPoints = rotateYMatrix(alpha, scaledPoints)
+    finalPoints = scaleFrame(rotatedPoints)
+    pointList = finalPoints
+    
     can.delete(*pointList)
     draw()
 
@@ -96,8 +108,21 @@ def scaleBoundingBox(movedPoints):
 
 def scaleFrame(scaledPoints):
     "Punkte an Bildschirmaufloesung anpassen"
+    print "scaleFrame: ", scaledPoints[:3]
     #print [[x[0] * WIDTH/2 + WIDTH/2, HEIGHT - (x[1] * HEIGHT/2 + HEIGHT/2)] for x in scaledPoints]
-    return [[x[0] * WIDTH/2 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2 + HEIGHT/2)] for x in scaledPoints]
+    return [[x[0] * WIDTH/2.0 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2.0 + HEIGHT/2.0)] for x in scaledPoints]
+
+
+def rotateYMatrix(alpha,scaledPoints):
+    "Matrix zum Rotieren um die Y-Achse"
+    
+#    x_new = [[math.cos(alpha) * x[0] for x in scaledPoints] + [math.sin(alpha) * x[2] for x in scaledPoints]]
+ #   y_new = [1 * x[1] for x in scaledPoints] 
+  #  z_new = [[-math.sin(alpha) * x[0] for x in scaledPoints] + [math.cos(alpha) * x[2] for x in scaledPoints]]
+
+#    return [x_new,y_new,z_new]
+
+    return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2]] for p in scaledPoints]
 
 if __name__ == "__main__":
     #check parameters
@@ -113,7 +138,9 @@ if __name__ == "__main__":
     deltaValues = calcDeltas(createBoundingBox(points))
     movedPoints = moveBoundingBox(deltaValues, points)
     scaledPoints = scaleBoundingBox(movedPoints)
+    print "scaledPoints: ", scaledPoints[:3]
     finalPoints = scaleFrame(scaledPoints)
+    print "finalPoints: ", finalPoints[:3]
 
     # Globale pointList neu setzen
     pointList = finalPoints
