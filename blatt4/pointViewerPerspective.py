@@ -2,14 +2,21 @@ from Tkinter import *
 from Canvas import *
 import sys
 import math
+import numpy
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
+FOW = 60
 
 HPSIZE = 1 # double of point size (must be integer)
 COLOR = "#ff6cbb" # blue
 
 ALPHA = 10 * math.pi / 180 # Winkel fuer Drehung
+
+#KAMERA
+E = (0,0,1)
+UP = (0,1,0)
+C = (0,0,0)
 
 pointList = [] # list of points
 
@@ -34,7 +41,7 @@ def rotYp():
     """ rotate counterclockwise around y axis """    
     global ALPHA
     global pointList
-    pointList = rotateMatrix(ALPHA, pointList)
+    pointList = rotateYMatrix(ALPHA, pointList)
     draw()
 
 
@@ -42,7 +49,7 @@ def rotYn():
     """ rotate clockwise around y axis """
     global ALPHA
     global pointList
-    pointList = rotateMatrix(-ALPHA, pointList)
+    pointList = rotateYMatrix(-ALPHA, pointList)
     draw()
 
 
@@ -107,9 +114,108 @@ def scaleFrame(scaledPoints):
     return [[x[0] * WIDTH/2.0 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2.0 + HEIGHT/2.0)] for x in scaledPoints]
 
 
-def rotateMatrix(alpha,scaledPoints):
+def rotateYMatrix(alpha,scaledPoints):
     "Matrix zum Rotieren um die Y-Achse"
     return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2]] for p in scaledPoints]
+
+
+
+# ------------- BEGIN ----------
+#
+# VECTOR FUNCTIONS
+def norm(v):
+    'Norm des Vektors berechnen -> passt'
+    return math.sqrt(sum(math.pow(v[i],2)for i in range(len(v))))
+
+def sub(v, vector):
+    'Zwei Vektoren subtrahieren'
+    return [v[i] - vector[i] for i in range(len(v))]
+    
+def div(v, scalar):
+    'Division Vektor durch Skalar'
+    return [v[i] / scalar for i in range (len(v))]
+
+def cross(v, vector):
+    'Kreuzprodukt zweier Vektoren im 3-dimensionalen Raum'
+    v_e = [0,0,0]
+    v_e[0] = v[1] * vector[2] - v[2] * vector[1]
+    v_e[1] = v[2] * vector[0] - v[0] * vector[2]
+    v_e[2] = v[0] * vector[1] - v[1] * vector[0]
+    return v_e
+
+def mul(v, scalar):
+    return [scalar * v[i] for i in range (len(v))]
+
+def dot(v, vector):
+    'Skalarprodukt -> Vektor * Vektor = Wert'
+    return float(sum(v[i] * vector[i] for i in range (len(v))))
+#
+# ------------- END ----------
+
+# ------------- Pipeline ----------
+def createCamera():
+    'Kameravektoren berechnen'
+    c = (0,0,0)
+    up = (0,1,0)
+    e = (0,0,1)
+    
+    # calc up'
+    up_ = div(up,norm(up))
+    
+    # calc f
+    f_temp = sub(c,e)
+    f = div(f_temp,norm(f_temp))
+    
+    # calc s
+    s_temp = cross(f, up_)
+    s = div(s_temp,norm(s_temp))
+    
+    # calc u
+    u = cross(s,f)
+    
+    return s,e,u,f 
+    
+def createLookAtMatrix(cameraVectors):
+    s,e,u,f = cameraVectors
+    a = -dot(s,e)
+    b = -dot(u,e)
+    c = dot(f,e)
+
+    return numpy.matrix([ [s[0],s[1],s[2],a] , [u[0],u[1],u[2],b] , [-f[0],-f[1],-f[2],c] , [0,0,0,1] ])
+
+def useLookAtMatrix(lookAtMatrix, p):
+    pointAsMatrix = numpy.matrix([[p[0]],[p[1]],[p[2]],[p[3]]])
+    return lookAtMatrix * pointAsMatrix
+
+def createTransformMatrix():
+    global WIDTH
+    global HEIGHT
+    
+    f = 6
+    n = 2
+    
+    aspect = WIDTH / HEIGHT
+    alpha = math.pi * 30 / 180
+
+    cot = ((math.cos(alpha))/(math.sin(alpha)))/aspect
+    
+    temp3 = f+n
+    temp4 = f-n
+    temp5 = f*n
+    temp1 = (-temp3) /temp4
+    temp2 = (-2*temp5) / temp4
+    
+    return numpy.matrix( [ [ cot,0,0,0 ] , [ 0,cot,0,0 ] , [ 0,0,temp1,temp2 ] , [ 0,0,-1,0 ] ] )
+
+def useTrafoMatrix(trafoMatrix, p):
+    pointAsMatrix = numpy.matrix(p)
+    ret = (trafoMatrix * pointAsMatrix).tolist()
+    return [ret[0][0], ret[1][0], ret[2][0], ret[3][0]]
+    
+def dividePerspective(transformedPoints):
+    return [ [x[0]/x[3], x[1]/x[3] , x[2]/x[3] , x[3]/x[3]] for x in transformedPoints ]
+
+# ------------- END ----------
 
 
 if __name__ == "__main__":
@@ -120,15 +226,31 @@ if __name__ == "__main__":
     
     # Einlesen
     print "Dateiname: ", sys.argv[1]
-    points = [map(float, x.split()) for x in file(sys.argv[1]).readlines()]
+    points = [map(float, x.split())+[1.0] for x in file(sys.argv[1]).readlines()]
+    
+    cameraVectors = createCamera()
+    lookAtMatrix = createLookAtMatrix(cameraVectors)
+    trafoMatrix = createTransformMatrix()
     
     # Bounding Box, verschieben zum Mittelpunkt, skalieren und anpassen an Aufloesung
     deltaValues = calcDeltas(createBoundingBox(points))
     movedPoints = moveBoundingBox(deltaValues, points)
     scaledPoints = scaleBoundingBox(movedPoints)
+   
+    transformedPoints = []
+   
+    for i in scaledPoints:
+        # Homogene Komponente hinzufuegen
+        i.append(1.0)
+        #
+        transformedPoints.append(useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,i)))
 
+    print transformedPoints[:3]
+    finalPoints = dividePerspective(transformedPoints)
+    print finalPoints[:3]
+    
     # Globale pointList neu setzen
-    pointList = scaledPoints
+    pointList = finalPoints
 
     # create main window
     mw = Tk()
