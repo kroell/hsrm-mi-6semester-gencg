@@ -13,11 +13,6 @@ COLOR = "#ff6cbb" # blue
 
 ALPHA = 10 * math.pi / 180 # Winkel fuer Drehung
 
-#KAMERA
-E = (0,0,1)
-UP = (0,1,0)
-C = (0,0,0)
-
 pointList = [] # list of points
 
 def quit(root=None):
@@ -41,7 +36,18 @@ def rotYp():
     """ rotate counterclockwise around y axis """    
     global ALPHA
     global pointList
-    pointList = rotateYMatrix(ALPHA, pointList)
+    
+    #cameraVectors = createCamera()
+    #lookAtMatrix = createLookAtMatrix(cameraVectors)
+    #trafoMatrix = createTransformMatrix()
+    
+    #transformedPoints = []
+    #for i in pointList:
+    #    transformedPoints.append(useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,i)))
+    
+    #fp = dividePerspective(pointList)
+    #pointList = rotateMatrix(ALPHA, fp)
+    print "bla"
     draw()
 
 
@@ -49,7 +55,14 @@ def rotYn():
     """ rotate clockwise around y axis """
     global ALPHA
     global pointList
-    pointList = rotateYMatrix(-ALPHA, pointList)
+ 
+    rotMatrix = createRotateMatrix(-ALPHA)
+
+    rotatedPoints = [useRotateMatrix(rotMatrix, p) for p in pointList ]
+    transformedPoints = [useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,p)) for p in rotatedPoints]
+
+    pointList = dividePerspective(transformedPoints)
+    
     draw()
 
 
@@ -114,10 +127,25 @@ def scaleFrame(scaledPoints):
     return [[x[0] * WIDTH/2.0 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2.0 + HEIGHT/2.0)] for x in scaledPoints]
 
 
-def rotateYMatrix(alpha,scaledPoints):
-    "Matrix zum Rotieren um die Y-Achse"
-    return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2]] for p in scaledPoints]
+def rotateMatrix(alpha,scaledPoints):
+    "Matrix zum Rotieren"
+    return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2] ] for p in scaledPoints]
 
+def createRotateMatrix(alpha):
+    rotMatrix = numpy.matrix([ 
+                              [math.cos(alpha), 0, -math.sin(alpha), 0 ] , 
+                              [0, 1, 0, 0] , 
+                              [ -math.sin(alpha), 0, math.cos(alpha), 0 ] ,
+                              [0, 0, 0, 1] 
+                              ])
+    return rotMatrix
+
+def useRotateMatrix(rotMatrix,p):
+    "Rotieren mittels einer 4*4 Matrix"    
+    pointAsMatrix = numpy.matrix([[p[0]],[p[1]],[p[2]],[p[3]]])
+    ret = (rotMatrix * pointAsMatrix).tolist()
+
+    return [ret[0][0], ret[1][0], ret[2][0], ret[3][0]]
 
 
 # ------------- BEGIN ----------
@@ -155,9 +183,9 @@ def dot(v, vector):
 # ------------- Pipeline ----------
 def createCamera():
     'Kameravektoren berechnen'
-    c = (0,0,0)
-    up = (0,1,0)
-    e = (0,0,1)
+    c = [0,0,0]
+    up = [0,1,0]
+    e = [0,0,2]
     
     # calc up'
     up_ = div(up,norm(up))
@@ -180,7 +208,6 @@ def createLookAtMatrix(cameraVectors):
     a = -dot(s,e)
     b = -dot(u,e)
     c = dot(f,e)
-
     return numpy.matrix([ [s[0],s[1],s[2],a] , [u[0],u[1],u[2],b] , [-f[0],-f[1],-f[2],c] , [0,0,0,1] ])
 
 def useLookAtMatrix(lookAtMatrix, p):
@@ -209,9 +236,11 @@ def createTransformMatrix():
 
 def useTrafoMatrix(trafoMatrix, p):
     pointAsMatrix = numpy.matrix(p)
+    
     ret = (trafoMatrix * pointAsMatrix).tolist()
     return [ret[0][0], ret[1][0], ret[2][0], ret[3][0]]
-    
+
+
 def dividePerspective(transformedPoints):
     return [ [x[0]/x[3], x[1]/x[3] , x[2]/x[3] , x[3]/x[3]] for x in transformedPoints ]
 
@@ -242,12 +271,9 @@ if __name__ == "__main__":
     for i in scaledPoints:
         # Homogene Komponente hinzufuegen
         i.append(1.0)
-        #
         transformedPoints.append(useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,i)))
 
-    print transformedPoints[:3]
     finalPoints = dividePerspective(transformedPoints)
-    print finalPoints[:3]
     
     # Globale pointList neu setzen
     pointList = finalPoints
