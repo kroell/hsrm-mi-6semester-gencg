@@ -6,7 +6,6 @@ import numpy
 
 WIDTH  = 400 # width of canvas
 HEIGHT = 400 # height of canvas
-FOW = 60
 
 HPSIZE = 1 # double of point size (must be integer)
 COLOR = "#ff6cbb" # blue
@@ -27,7 +26,13 @@ def draw():
     """ draw points """
     for item in can.find_all():
         can.delete(item)
-    for point in scaleFrame(pointList):
+    
+    # Punkte mit KameraMatrix, TransformationMatrix multiplizieren
+    transformedPoints = [useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,p)) for p in pointList]
+    # Punkte perspektifisch teilen
+    p = dividePerspective(transformedPoints)
+    
+    for point in scaleFrame(p):
         x,y = point
         can.create_oval(x-HPSIZE, y-HPSIZE, x+HPSIZE, y+HPSIZE, fill=COLOR, outline=COLOR)
 
@@ -37,17 +42,11 @@ def rotYp():
     global ALPHA
     global pointList
     
-    #cameraVectors = createCamera()
-    #lookAtMatrix = createLookAtMatrix(cameraVectors)
-    #trafoMatrix = createTransformMatrix()
+    # Rotationsmatrix erstellen
+    rotMatrix = createRotateMatrix(ALPHA)
+    # Rotationsmatrix auf Punkte anwenden
+    pointList = [useRotateMatrix(rotMatrix, p) for p in pointList]
     
-    #transformedPoints = []
-    #for i in pointList:
-    #    transformedPoints.append(useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,i)))
-    
-    #fp = dividePerspective(pointList)
-    #pointList = rotateMatrix(ALPHA, fp)
-    print "bla"
     draw()
 
 
@@ -56,15 +55,14 @@ def rotYn():
     global ALPHA
     global pointList
  
+    # Rotationsmatrix erstellen
     rotMatrix = createRotateMatrix(-ALPHA)
-
-    rotatedPoints = [useRotateMatrix(rotMatrix, p) for p in pointList ]
-    transformedPoints = [useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,p)) for p in rotatedPoints]
-
-    pointList = dividePerspective(transformedPoints)
+    # Rotatoinsmatrix auf Punkte anwenden
+    pointList = [useRotateMatrix(rotMatrix, p) for p in pointList]
     
     draw()
 
+# ------------- BEGIN BOUNDING BOX ----------
 
 def createBoundingBox(points):
     "Bounding Box erstellen indem die min und max Werte des Modells ausgerechnet werden"
@@ -126,31 +124,10 @@ def scaleFrame(scaledPoints):
     "Punkte an Bildschirmaufloesung anpassen"
     return [[x[0] * WIDTH/2.0 + WIDTH/2,HEIGHT - (x[1] * HEIGHT/2.0 + HEIGHT/2.0)] for x in scaledPoints]
 
-
-def rotateMatrix(alpha,scaledPoints):
-    "Matrix zum Rotieren"
-    return [[math.cos(alpha)*p[0] - math.sin(alpha)*p[2], p[1], math.sin(alpha) * p[0]+math.cos(alpha) * p[2] ] for p in scaledPoints]
-
-def createRotateMatrix(alpha):
-    rotMatrix = numpy.matrix([ 
-                              [math.cos(alpha), 0, -math.sin(alpha), 0 ] , 
-                              [0, 1, 0, 0] , 
-                              [ -math.sin(alpha), 0, math.cos(alpha), 0 ] ,
-                              [0, 0, 0, 1] 
-                              ])
-    return rotMatrix
-
-def useRotateMatrix(rotMatrix,p):
-    "Rotieren mittels einer 4*4 Matrix"    
-    pointAsMatrix = numpy.matrix([[p[0]],[p[1]],[p[2]],[p[3]]])
-    ret = (rotMatrix * pointAsMatrix).tolist()
-
-    return [ret[0][0], ret[1][0], ret[2][0], ret[3][0]]
+# ------------- END ----------
 
 
-# ------------- BEGIN ----------
-#
-# VECTOR FUNCTIONS
+# ------------- BEGIN VECTOR FUNCTIONS ----------
 def norm(v):
     'Norm des Vektors berechnen -> passt'
     return math.sqrt(sum(math.pow(v[i],2)for i in range(len(v))))
@@ -177,7 +154,7 @@ def mul(v, scalar):
 def dot(v, vector):
     'Skalarprodukt -> Vektor * Vektor = Wert'
     return float(sum(v[i] * vector[i] for i in range (len(v))))
-#
+
 # ------------- END ----------
 
 # ------------- Pipeline ----------
@@ -204,6 +181,7 @@ def createCamera():
     return s,e,u,f 
     
 def createLookAtMatrix(cameraVectors):
+    "LookAtMatrix mittels KameraVektoren erstellen und zurueckgeben"
     s,e,u,f = cameraVectors
     a = -dot(s,e)
     b = -dot(u,e)
@@ -211,10 +189,12 @@ def createLookAtMatrix(cameraVectors):
     return numpy.matrix([ [s[0],s[1],s[2],a] , [u[0],u[1],u[2],b] , [-f[0],-f[1],-f[2],c] , [0,0,0,1] ])
 
 def useLookAtMatrix(lookAtMatrix, p):
+    "LookAtMatrix auf mitgegebenem Punkt anwenden"
     pointAsMatrix = numpy.matrix([[p[0]],[p[1]],[p[2]],[p[3]]])
     return lookAtMatrix * pointAsMatrix
 
 def createTransformMatrix():
+    "Tansformationsmatrix erstllen und zurueckgeben"
     global WIDTH
     global HEIGHT
     
@@ -232,7 +212,12 @@ def createTransformMatrix():
     temp1 = (-temp3) /temp4
     temp2 = (-2*temp5) / temp4
     
-    return numpy.matrix( [ [ cot,0,0,0 ] , [ 0,cot,0,0 ] , [ 0,0,temp1,temp2 ] , [ 0,0,-1,0 ] ] )
+    return numpy.matrix( [ 
+                          [ cot,0,0,0 ] , 
+                          [ 0,cot,0,0 ] , 
+                          [ 0,0,temp1,temp2 ] , 
+                          [ 0,0,-1,0 ] 
+                          ] )
 
 def useTrafoMatrix(trafoMatrix, p):
     pointAsMatrix = numpy.matrix(p)
@@ -247,6 +232,26 @@ def dividePerspective(transformedPoints):
 # ------------- END ----------
 
 
+# ------------- BEGIN ROTATION ----------
+def createRotateMatrix(alpha):
+    "Rotationsmatrix erstellen"
+    rotMatrix = numpy.matrix([ 
+                              [math.cos(alpha), 0, -math.sin(alpha), 0 ] , 
+                              [0, 1, 0, 0] , 
+                              [math.sin(alpha), 0, math.cos(alpha), 0 ] ,
+                              [0, 0, 0, 1] 
+                              ])
+    return rotMatrix
+
+def useRotateMatrix(rotMatrix,p):
+    "Rotieren mittels Rotationsmatrix * Punkt als Matrix"    
+    pointAsMatrix = numpy.matrix([[p[0]],[p[1]],[p[2]],[p[3]]])
+    ret = (rotMatrix * pointAsMatrix).tolist()
+
+    return [ret[0][0], ret[1][0], ret[2][0], ret[3][0]]
+# ------------- END ----------
+
+
 if __name__ == "__main__":
     #check parameters
     if len(sys.argv) == 1:
@@ -257,6 +262,7 @@ if __name__ == "__main__":
     print "Dateiname: ", sys.argv[1]
     points = [map(float, x.split())+[1.0] for x in file(sys.argv[1]).readlines()]
     
+    # Kameravektoren, LookAtMatrix und Transformationsmatrix erstellen
     cameraVectors = createCamera()
     lookAtMatrix = createLookAtMatrix(cameraVectors)
     trafoMatrix = createTransformMatrix()
@@ -266,18 +272,9 @@ if __name__ == "__main__":
     movedPoints = moveBoundingBox(deltaValues, points)
     scaledPoints = scaleBoundingBox(movedPoints)
    
-    transformedPoints = []
+    # Homogene Komponente zu skalierten Punkten hinzufuegen
+    pointList = [p+[1.0] for p in scaledPoints ]
    
-    for i in scaledPoints:
-        # Homogene Komponente hinzufuegen
-        i.append(1.0)
-        transformedPoints.append(useTrafoMatrix(trafoMatrix, useLookAtMatrix(lookAtMatrix,i)))
-
-    finalPoints = dividePerspective(transformedPoints)
-    
-    # Globale pointList neu setzen
-    pointList = finalPoints
-
     # create main window
     mw = Tk()
     mw._root().wm_title("Point Viewer")
