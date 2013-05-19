@@ -207,10 +207,9 @@ def createTransformMatrix():
     cot = ((math.cos(alpha))/(math.sin(alpha)))/aspect
     
     temp3 = f+n
-    temp4 = f-n
     temp5 = f*n
-    temp1 = (-temp3) /temp4
-    temp2 = (-2*temp5) / temp4
+    temp1 = (-temp3) / (f-n)
+    temp2 = (-2*(f*n)) / (f-n)
     
     return numpy.matrix( [ 
                           [ cot,0,0,0 ] , 

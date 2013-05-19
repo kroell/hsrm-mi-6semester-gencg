@@ -17,26 +17,26 @@ elementList = [] # list of elements (used by Canvas.delete(...))
 def drawGrid(s):
     """ draw a rectangular grid """
     for i in range(0,WIDTH,s):
-	element = can.create_line(i,0,i,HEIGHT)
+        element = can.create_line(i,0,i,HEIGHT)
     for i in range(0,HEIGHT,s):
-	element = can.create_line(0,i,WIDTH,i)
+        element = can.create_line(0,i,WIDTH,i)
 
 
 def drawPoints():
     """ draw points """
     for p in pointList:
-	element = can.create_rectangle(p[0]-HPSIZE, p[1]-HPSIZE,
+        element = can.create_rectangle(p[0]-HPSIZE, p[1]-HPSIZE,
 				       p[0]+HPSIZE, p[1]+HPSIZE,
 				       fill=FCOLOR, outline=BCOLOR)
-	elementList.append(element)    
+        elementList.append(element)    
 
 
 def drawLines():
     """ draw lines """
     for line in zip(pointList[::2],pointList[1::2]):
-	drawBresenhamLine(line[0],line[1])
-	element = can.create_line(line,width=1)
-	elementList.append(element)    
+        drawBresenhamLine(line[0],line[1])
+        element = can.create_line(line,width=1)
+        elementList.append(element)    
 
 
 def drawBresenhamLine(p,q):
@@ -77,8 +77,8 @@ def mouseEvent(event):
 if __name__ == "__main__":
     #check parameters
     if len(sys.argv) != 1:
-       print "draw lines using bresenhams algorithm"
-       sys.exit(-1)
+        print "draw lines using bresenhams algorithm"
+        sys.exit(-1)
 
     # create main window
     mw = Tk()
