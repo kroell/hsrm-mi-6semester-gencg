@@ -7,9 +7,10 @@ if sys.platform != "win32":
 	# Das wird erwartet
 	MENUFUNC = ctypes.CFUNCTYPE(None, ctypes.c_int)
 	def fixed_glutCreateMenu(menu_func):
-   		"""replacement for broken glutCreateMenu"""
-   		menu = simple.glutCreateMenu(MENUFUNC(menu_func))
-   		return menu
+		"""replacement for broken glutCreateMenu"""
+		print MENUFUNC
+		menu = simple.glutCreateMenu(MENUFUNC(menu_func))
+		return menu
 
 	# now replace existing version in OpenGL.GLUT
 	import OpenGL.GLUT

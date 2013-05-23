@@ -11,11 +11,12 @@ Created on 19.05.2013
 # Keywords: Alpha Blending, Textures, Animation, Double Buffer
 
 from OpenGL.GL import *
-from OpenGL.GLU import *
+from OpenGL.GLUT import *
 
 from math import * # trigonometry
 
-import pygame # just to get a display
+#import pygame # just to get a display
+from pygame import *
 
 # get an OpenGL surface
 
@@ -124,4 +125,13 @@ while not done:
     glFlush()
 
     glDeleteTextures(texture)
-    pygame.display.flip()
+    
+    
+    glutInit(sys.argv)
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
+    glutInitWindowSize(500,500)
+    glutCreateWindow("Einfaches OpenGL Programm")
+    glutDisplayFunc(display)
+    #initGL(500,500)
+    glutMainLoop()
+    #pygame.display.flip()
