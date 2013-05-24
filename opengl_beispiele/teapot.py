@@ -24,6 +24,11 @@ def initGL(width, height):
     # Camera
     gluPerspective(45., float(width)/height, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_NORMALIZE)
+    glShadeModel(GL_FLAT)
 
 def display():
     # Clear framebuffer and depth buffer
@@ -40,7 +45,7 @@ def display():
     # Rotate around y-axis
     glRotate(angle, 0.0, 1.0, 0.0)
     # Set glutWireTeapot
-    glutWireTeapot(.5)
+    glutSolidTeapot(.5)
     # prevent stack overflow or underflow
     glPopMatrix()
     #Move
@@ -48,7 +53,7 @@ def display():
     # Rotate around y-Axis
     glRotate(-angle, 1.0,0.0,0.0)
     # Set glutWireTeapot
-    glutWireTeapot(.5)
+    glutSolidTeapot(.5)
     # Swap buffers
     glutSwapBuffers()
     
@@ -57,7 +62,7 @@ def display():
     #Move down the z-axis
     glTranslate(0.0,0.0,-4.0)
     #Set glutWireTeapot
-    glutWireTeapot(1.0)
+    #glutSolidTeapot(1.0)
     # Swap double buffer buffers
     glutSwapBuffers()
 

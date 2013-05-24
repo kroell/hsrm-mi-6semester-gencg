@@ -11,7 +11,23 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 
-import sys, numpy
+import sys, numpy, math
+
+angle = 10
+i = 0
+
+WIDTH, HEIGHT = 500, 500
+
+# color definitions
+black = (0.0,0.0,0.0,0.0)
+white = (1.0,1.0,1.0,1.0)
+blue = (0.0,0.0,1.0,0.0)
+green = (0.0,1.0,0.0,0.0)
+yellow = (1.0,1.0,0.0,0.0)
+red = (1.0,0.0,0.0,0.0)
+
+colorList = [white, black, red, yellow, green, blue]
+colorFlag = True
 
 
 def initGL(width, height):
@@ -19,7 +35,8 @@ def initGL(width, height):
     OpenGL initialisieren
     '''
     #Set background color
-    glClearColor(0.0,0.0,1.0,0.0)
+    #blue
+    glClearColor(colorList[2][0],colorList[2][1],colorList[2][2],colorList[2][3])
     #switch to projection matrix
     glMatrixMode(GL_PROJECTION)
     #set to 1
@@ -35,11 +52,25 @@ def display():
     '''
     Objekte rendern
     '''
-    global scale, center, points, vbo
+    global scale, center, points, vbo, colorList, colorFlag, i
+    
     # Clear framebuffer
     glClear(GL_COLOR_BUFFER_BIT)
+    
     # Render Color
-    glColor(1.0, 1.0, 1.0)
+    
+    if i < len(colorList):
+        if colorFlag:
+            #white
+            glColor(colorList[i][0],colorList[i][1],colorList[i][2])
+            i += 1
+        else:
+            #black
+            glColor(colorList[i][0],colorList[i][1],colorList[i][2])
+            i += 1
+    else:
+        i = 0
+    
     # Reset modelview matrix
     glLoadIdentity()
     # Rotate
@@ -65,9 +96,9 @@ def keyPressed(key, x, y):
     '''
     Drehungen mittels Tasen x,X, y,Y und z,Z
     '''
-    global rotateX, rotateY, rotateZ
+    global rotateX, rotateY, rotateZ, colorList, colorFlag
     
-    angle = 20
+    angle = 10
 
     if key == 'x': 
         rotateX = rotateX + angle
@@ -81,6 +112,17 @@ def keyPressed(key, x, y):
         rotateZ = rotateZ + angle
     if key == 'Z':
         rotateZ = rotateZ - angle
+        
+    # Hintergrundfarbe aendern
+    if key == 'b':
+        glClearColor(black[0],black[1],black[2],black[3])
+
+    if key == 'f':
+        glutPostRedisplay()
+        if colorFlag:
+            colorFlag = False
+        else:
+            colorFlag = True
 
     glutPostRedisplay()
 
@@ -101,6 +143,38 @@ def resizeViewport(width, height):
     glMatrixMode(GL_MODELVIEW)
 
 
+#### ROTIERUNG MIT MOUSE
+def projectOnSphere(x,y,r):
+    x,y = x - WIDTH / 2.0, HEIGHT/ 2.0 -y
+    a = min(r*r, x**2 + y**2)
+    z = math.sqrt(r*r - a)
+    l = math.sqrt(x**2 + y**2 + z**2)
+    return x/l, y/l, z/l
+
+def mouse(button, state, x, y):
+    """ handle mouse events """
+    
+    global startP, actOri, angle, doRotation, axis
+    
+    r = min(WIDTH, HEIGHT)/2.0
+    if button == GLUT_LEFT_BUTTON:
+        if state == GLUT_DOWN:
+            doRotation = True
+            startP = projectOnSphere(x,y,r)
+        if state == GLUT_UP:
+            doRotation = False
+            actOri = actOri * rotate(angle,axis)
+            angle = 0
+
+def mouseMotion(x,y):
+    """ handle mouse motion """
+    print "mouse motion at ", x, y
+
+def rotate(angle,axis):
+    pass
+
+#### ENDE ROTIERUNG MIT MOUSE
+
 def main():
     '''
     Fenster initialisieren, File einlesen, BoundingBox erstellen/zentrieren/skalieren
@@ -112,13 +186,17 @@ def main():
     glutInit(sys.argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize (500,500)
-    glutCreateWindow("OpenGL Viewer")
+    glutCreateWindow("OpenGL obj Viewer")
     # Register display callback function
     glutDisplayFunc(display)
     # Register reshape callback function
     glutReshapeFunc(resizeViewport)
     # Register keyboad callback function
     glutKeyboardFunc(keyPressed)
+    #register mouse function
+    glutMouseFunc(mouse)         
+    #register motion function
+    glutMotionFunc(mouseMotion)  
 
     #check parameters
     if len(sys.argv) == 1:
@@ -126,7 +204,7 @@ def main():
         sys.exit(-1)
     
     # File einlesen
-    print "Dateiname: ", sys.argv[1]
+    print "Verwendetes File: ", sys.argv[1]
     points = [map(float, x.split())+[1.0] for x in file(sys.argv[1]).readlines()]
     
     # bounding box in Schwani Manier
