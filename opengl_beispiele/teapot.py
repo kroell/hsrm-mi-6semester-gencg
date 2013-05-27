@@ -45,7 +45,7 @@ def display():
     # Rotate around y-axis
     glRotate(angle, 0.0, 1.0, 0.0)
     # Set glutWireTeapot
-    glutSolidTeapot(.5)
+    glutWireTeapot(.5)
     # prevent stack overflow or underflow
     glPopMatrix()
     #Move
@@ -53,7 +53,7 @@ def display():
     # Rotate around y-Axis
     glRotate(-angle, 1.0,0.0,0.0)
     # Set glutWireTeapot
-    glutSolidTeapot(.5)
+    glutWireTeapot(.5)
     # Swap buffers
     glutSwapBuffers()
     
