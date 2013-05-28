@@ -100,7 +100,7 @@ def initGL(width, height):
     #set to 1
     glLoadIdentity()
     # Camera, multiply with new p-matrix
-    glOrtho(-1.5, 1.5, -1.5, 1.5, -1.0, 1.0)
+    gluOrtho2D(-1.5, 1.5, -1.5, 1.5)
     #switch to modelview matrix
     glMatrixMode(GL_MODELVIEW)
 
@@ -419,29 +419,24 @@ def resizeViewport(width, height):
         
     #change to modelview matrix
     glMatrixMode(GL_MODELVIEW)
+    
+    #swap buffer
+    glutSwapBuffers()   
 
 
 def reshape(width, height):
     """ adjust projection matrix to window size"""
-    global windowWidth, windowHeight
-    windowWidth = width
-    windowHeight = height
+    #global windowWidth, windowHeight
+    
+    if height == 0:
+        height = 1
+        
+    glViewport(0, 0, width, height)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
+    
     if orthoMode:
-        '''
-        glViewport(0, 0, width, height)
-        of = 1.5 + zPosCamera
-        if width <= height:
-             glOrtho(-of, of,
-                    -of*height/width, of*height/width,
-                    -4.0, 4.0)
-        else:
-            # Relativ zu gluLookat
-             glOrtho(-of*width/height, of*width/height,
-                     -of, of,
-                     -4.0, 4.0)'''
-        glViewport(0, 0, width, height)
+        
         if width <= height:
             glOrtho(-1.5, 1.5, -1.5*height/width, 1.5*height/width, -1.0, 1.0)
         else:
@@ -452,9 +447,9 @@ def reshape(width, height):
             glViewport(0, (height - width) / 2, width, width)
             gluPerspective(60.0, 1, 0.1, 100.0)
         else:
-            # Relativ zu gluLookat
             glViewport((width - height) / 2, 0, height, height)
             gluPerspective(60.0, 1.0, 0.1, 100.0)
+            
     glMatrixMode(GL_MODELVIEW)
 
 
