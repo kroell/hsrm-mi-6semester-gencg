@@ -10,7 +10,7 @@ Hochschule RheinMain, Medieninformatik
 
 
 Start des Programms mit:
-- python objectFile.obj [wire|solid]
+- python objectFile.obj
 
 Standardwerte:
 - Objektdarstellung als wire 
@@ -29,7 +29,7 @@ Folgende Tastaturbelegungen sind enthalten:
 - Z:    gegen den Uhrzeigersinn um die z-Achse zu drehen
 - w:    Objekt als Polygonnetz darstellen
 - s:    Objekt ausgefuellt anzeigen
-- l:    Licht einschalten (Objekt kann dann nicht mehr mit f eingefaerbt werden)
+- l:    Licht einschalten (funktioniert nicht bei cow.obj, da keine Normalen vorhanden sind)
 - k:    Licht ausschalten
 - ESC:  Frame schliessen und Programm beenden 
 
@@ -65,13 +65,9 @@ light = False
 mouseLastX = None
 mouseLastY = None
 
-#actOri = 1
-#axis = [0.0, 1.0, 0.0]
 angle = 10
-
 newXPos = 0.0
 newYPos = 0.0
-
 zoomFactor = 0
 
 frontColorIndex,backColorIndex = 2,1
@@ -79,7 +75,7 @@ rotateX, rotateY, rotateZ = 0, 0, 0
 WIDTH, HEIGHT = 500, 500
 
 aspect = float(WIDTH/HEIGHT)
-fov = 60
+fov = 45 
 near = 0.1
 far = 30.0
 
@@ -129,14 +125,14 @@ def mouse(button, state, x, y):
             doRotation = False
             
     # translate object
-    if button == GLUT_MIDDLE_BUTTON:
+    if button == GLUT_RIGHT_BUTTON:
         if state == GLUT_DOWN:
             doTranslation = True
         if state == GLUT_UP:
             doTranslation = False
         
     # zoom object
-    if button == GLUT_RIGHT_BUTTON:
+    if button == GLUT_MIDDLE_BUTTON:
         if state == GLUT_DOWN:
             doZoom = True
         if state == GLUT_UP:
@@ -147,7 +143,7 @@ def mouseMotion(x,y):
     ''' 
     handle mouse motion
     '''
-    global angle, doZoom, doRotation, doTranslation, center, mouseLastX, mouseLastY, rotateX, rotateY, frameWidth, frameHeight, newXPos, newYPos, zoomFactor
+    global angle, doZoom, doRotation, doTranslation, center, mouseLastX, mouseLastY, rotateX, rotateY, sceneWidth, sceneHeight, newXPos, newYPos, zoomFactor
     
     xDiff = 0
     yDiff = 0
@@ -167,7 +163,7 @@ def mouseMotion(x,y):
     
     # zoom  
     if doZoom:  
-        zScale = float(frameHeight) / angle
+        zScale = float(sceneHeight) / angle
         if yDiff != 0:
             zoomFactor += yDiff / zScale
             # limit zoomFactor
@@ -178,7 +174,7 @@ def mouseMotion(x,y):
     
     # translatation
     if doTranslation:
-        scale = float(frameWidth)/2.0
+        scale = float(sceneWidth)/2.0
         if xDiff != 0:
             newXPos += xDiff / scale
         if yDiff != 0:
@@ -199,38 +195,14 @@ def initGeometryFromObjFile():
     
     #check parameters
     if len(sys.argv) == 1:
-        print "python oglViewer.py object.obj"
+        print "python oglViewer.py objectFile.obj"
         sys.exit(-1)
         
     print "Used File: ", sys.argv[1]
-    objFile = sys.argv[1]
     
-    objectVertices = [] 
-    objectNormals = []
-    objectFaces =[] 
+    # load obj File
+    objectVertices, objectNormals, objectFaces = loadOBJ(sys.argv[1]) 
     data = []
-    
-    for lines in file(objFile):
-        # wenn nicht leer
-        if lines.split():
-            check = lines.split()[0]
-            if check == 'v':
-                objectVertices.append(map(float,lines.split()[1:]))
-            if check == 'vn':
-                objectNormals.append(map(float,lines.split()[1:]))
-            if check == 'f':
-                first = lines.split()[1:]
-                for face in first:
-                    objectFaces.append(map(float,face.split('//')))
-
-    for face in objectFaces:
-        # if no vt is available
-        if len(face) == 2:
-            face.insert(1, 0.0)
-        # if no vt and no vn is available
-        if len(face) == 1:
-            face.insert(1, 0.0)
-            face.insert(2, 0.0)
     
     # Create BoundingBox
     boundingBox = [map(min, zip(*objectVertices)), map(max, zip(*objectVertices))]
@@ -253,27 +225,37 @@ def initGeometryFromObjFile():
 
 
 def loadOBJ(filename):
-    numVerts = 0
-    verts = []
-    norms = []
-    vertsOut = []
-    normsOut = []
-    for line in open(filename, "r"):
-        vals = line.split()
-        if vals[0] == "v":
-            v = map(float, vals[1:4])
-            verts.append(v)
-        if vals[0] == "vn":
-            n = map(float, vals[1:4])
-            norms.append(n)
-        if vals[0] == "f":
-            for f in vals[1:]:
-                w = f.split("/")
-                # OBJ Files are 1-indexed so we must subtract 1 below
-                vertsOut.append(list(verts[int(w[0])-1]))
-                normsOut.append(list(norms[int(w[2])-1]))
-                numVerts += 1
-    return vertsOut, normsOut
+    '''
+    Load .obj File and return three lists with object-vertices, object-normals and object-faces
+    '''
+    objectVertices = [] 
+    objectNormals = []
+    objectFaces =[] 
+    data = []
+    
+    for lines in file(filename):
+        # check if not empty
+        if lines.split():
+            check = lines.split()[0]
+            if check == 'v':
+                objectVertices.append(map(float,lines.split()[1:]))
+            if check == 'vn':
+                objectNormals.append(map(float,lines.split()[1:]))
+            if check == 'f':
+                first = lines.split()[1:]
+                for face in first:
+                    objectFaces.append(map(float,face.split('//')))
+
+    for face in objectFaces:
+        # if no vt is available fill up with 0 at list position 1
+        if len(face) == 2:
+            face.insert(1, 0.0)
+        # if no vt and no vn is available fill up woth 0 at list position 1 and 2
+        if len(face) == 1:
+            face.insert(1, 0.0)
+            face.insert(2, 0.0)
+
+    return objectVertices, objectNormals, objectFaces
 
 
 def display():
@@ -287,6 +269,7 @@ def display():
     
     # view as ortho Projection
     if orthoMode:
+        # if light is enabled
         if light:
             glEnable(GL_LIGHTING)
             glEnable(GL_LIGHT0)
@@ -301,14 +284,13 @@ def display():
         #set to 1
         glLoadIdentity()
         # Camera, multiply with new p-matrix
-        
-        # left, right, bottom, top,
         gluOrtho2D(-1.5, 1.5, -1.5, 1.5)
         #switch to modelview matrix
         glMatrixMode(GL_MODELVIEW)
     
     # view as perspective Projection
     if perspectiveMode:
+        # if light is enabled
         if light:
             glEnable(GL_LIGHTING)
             glEnable(GL_LIGHT0)
@@ -329,6 +311,7 @@ def display():
     
     # render vertox buffer object
     my_vbo.bind()
+    
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
     
@@ -348,6 +331,7 @@ def display():
     
     # Scale + Zoom
     glScale(scaleFactor+zoomFactor, scaleFactor+zoomFactor, scaleFactor+zoomFactor)
+    
     # move to center
     glTranslate(-center[0], -center[1], -center[2])
             
@@ -364,6 +348,7 @@ def display():
         glDrawArrays(GL_TRIANGLES, 0, len(data))
 
     my_vbo.unbind()
+    
     glDisableClientState(GL_VERTEX_ARRAY)
     glDisableClientState(GL_NORMAL_ARRAY)
     
@@ -450,13 +435,13 @@ def resizeViewport(width, height):
     '''
     Adjust projection matrix to window size
     '''
-    global frameWidth, frameHeight
+    global sceneWidth, sceneHeight
     
     if height == 0:
         height = 1
     
-    frameWidth = width
-    frameHeight = height
+    sceneWidth = width
+    sceneHeight = height
     
     glViewport(0, 0, width, height)
     glMatrixMode(GL_PROJECTION)
