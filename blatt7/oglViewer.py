@@ -1,9 +1,9 @@
 '''
 Created on May 23, 2013
-Finished on May 31, 2013
+Finished on May 30, 2013
 
 Generative Computergrafik, Uebungsblatt 7, Aufgabe 1
-Bewertete Abgabe
+OpenGL obj Viewer - Bewertete Abgabe
 Hochschule RheinMain, Medieninformatik
 
 @author: Soeren Kroell
@@ -29,7 +29,7 @@ Folgende Tastaturbelegungen sind enthalten:
 - Z:    gegen den Uhrzeigersinn um die z-Achse zu drehen
 - w:    Objekt als Polygonnetz darstellen
 - s:    Objekt ausgefuellt anzeigen
-- l:    Licht einschalten (funktioniert nicht bei cow.obj, da keine Normalen vorhanden sind)
+- l:    Licht einschalten
 - k:    Licht ausschalten
 - ESC:  Frame schliessen und Programm beenden 
 
@@ -38,7 +38,6 @@ Folgende Mausbelegungen sind enthalten:
 - Mittlere Maustaste:    Objekt zoom
 - Rechte Maustaste:      Objekt verschieben
 
- 
 '''
 
 from OpenGL.GL import *
@@ -92,7 +91,6 @@ red = (1.0,0.0,0.0,0.0)
 colorList = [black, white, red, green, blue, yellow]
 
 
-
 def initGL(width, height):
     '''
     OpenGL initialize
@@ -107,85 +105,7 @@ def initGL(width, height):
     gluOrtho2D(-1.5, 1.5, -1.5, 1.5)
     #switch to modelview matrix
     glMatrixMode(GL_MODELVIEW)
-
-
-def mouse(button, state, x, y):
-    '''
-    handle mouse events
-    '''
-    global doRotation, doZoom, doRotation, doTranslation, mouseLastX, mouseLastY
-    
-    mouseLastX, mouseLastY = None, None
-    
-    # rotate object
-    if button == GLUT_LEFT_BUTTON:
-        if state == GLUT_DOWN:
-            doRotation = True
-        if state == GLUT_UP:
-            doRotation = False
-            
-    # translate object
-    if button == GLUT_RIGHT_BUTTON:
-        if state == GLUT_DOWN:
-            doTranslation = True
-        if state == GLUT_UP:
-            doTranslation = False
-        
-    # zoom object
-    if button == GLUT_MIDDLE_BUTTON:
-        if state == GLUT_DOWN:
-            doZoom = True
-        if state == GLUT_UP:
-            doZoom = False
-
-
-def mouseMotion(x,y):
-    ''' 
-    handle mouse motion
-    '''
-    global angle, doZoom, doRotation, doTranslation, center, mouseLastX, mouseLastY, rotateX, rotateY, sceneWidth, sceneHeight, newXPos, newYPos, zoomFactor
-    
-    xDiff = 0
-    yDiff = 0
-    
-    # calc difference between act and last x,y mouse coordinates
-    if mouseLastX != None:
-        xDiff = x - mouseLastX
-    if mouseLastY != None:
-        yDiff = y - mouseLastY
-    
-    # rotate
-    if doRotation:        
-        if xDiff != 0:
-            rotateY += xDiff
-        if yDiff != 0:
-            rotateX += yDiff
-    
-    # zoom  
-    if doZoom:  
-        zScale = float(sceneHeight) / angle
-        if yDiff != 0:
-            zoomFactor += yDiff / zScale
-            # limit zoomFactor
-            if zoomFactor <= -1.90:
-                zoomFactor = -1.90
-            if zoomFactor >= 2.00:
-                zoomFactor = 1.99
-    
-    # translatation
-    if doTranslation:
-        scale = float(sceneWidth)/2.0
-        if xDiff != 0:
-            newXPos += xDiff / scale
-        if yDiff != 0:
-            newYPos += -yDiff / scale
-    
-    # Remember last x,y mouse coordinates
-    mouseLastX = x
-    mouseLastY = y
-    
-    glutPostRedisplay()
-           
+       
 
 def initGeometryFromObjFile():
     '''
@@ -250,7 +170,7 @@ def loadOBJ(filename):
         # if no vt is available fill up with 0 at list position 1
         if len(face) == 2:
             face.insert(1, 0.0)
-        # if no vt and no vn is available fill up woth 0 at list position 1 and 2
+        # if no vt and no vn is available fill up with 0 at list position 1 and 2
         if len(face) == 1:
             face.insert(1, 0.0)
             face.insert(2, 0.0)
@@ -258,103 +178,81 @@ def loadOBJ(filename):
     return objectVertices, objectNormals, objectFaces
 
 
-def display():
+def mouse(button, state, x, y):
     '''
-    Render all objects
+    handle mouse events
     '''
-    global scaleFactor, center, my_vbo, actOri, angle, axis, data, wireMode, orthoMode, perspectiveMode, solidMode, light, newXPos, newYPos, zoomFactor
-
-    # Clear framebuffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    global doRotation, doZoom, doRotation, doTranslation, mouseLastX, mouseLastY
     
-    # view as ortho Projection
-    if orthoMode:
-        # if light is enabled
-        if light:
-            glEnable(GL_LIGHTING)
-            glEnable(GL_LIGHT0)
-            glEnable(GL_COLOR_MATERIAL)
-            glEnable(GL_DEPTH_TEST)
-            glEnable(GL_NORMALIZE)
-        else:
-            glDisable(GL_LIGHTING)
+    mouseLastX, mouseLastY = None, None
+    
+    # rotate object
+    if button == GLUT_LEFT_BUTTON:
+        if state == GLUT_DOWN:
+            doRotation = True
+        if state == GLUT_UP:
+            doRotation = False
             
-        #switch to projection matrix
-        glMatrixMode(GL_PROJECTION)
-        #set to 1
-        glLoadIdentity()
-        # Camera, multiply with new p-matrix
-        gluOrtho2D(-1.5, 1.5, -1.5, 1.5)
-        #switch to modelview matrix
-        glMatrixMode(GL_MODELVIEW)
-    
-    # view as perspective Projection
-    if perspectiveMode:
-        # if light is enabled
-        if light:
-            glEnable(GL_LIGHTING)
-            glEnable(GL_LIGHT0)
-            glEnable(GL_DEPTH_TEST)
-            glEnable(GL_NORMALIZE)
-        else:
-            glDisable(GL_LIGHTING)
-        #switch to projection matrix
-        glMatrixMode(GL_PROJECTION)
-        #set to 1
-        glLoadIdentity()
-        #change perspective mode
-        gluPerspective(fov, aspect, near, far)
-        #set Camera
-        gluLookAt (0,0,3,0,0,0,0,1,0)
-        #switch to modelview matrix
-        glMatrixMode(GL_MODELVIEW)
-    
-    # render vertox buffer object
-    my_vbo.bind()
-    
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_NORMAL_ARRAY)
-    
-    glVertexPointer(3, GL_FLOAT, 24 , my_vbo)
-    glNormalPointer(GL_FLOAT, 24 , my_vbo + 12)
+    # translate object
+    if button == GLUT_RIGHT_BUTTON:
+        if state == GLUT_DOWN:
+            doTranslation = True
+        if state == GLUT_UP:
+            doTranslation = False
+        
+    # zoom object
+    if button == GLUT_MIDDLE_BUTTON:
+        if state == GLUT_DOWN:
+            doZoom = True
+        if state == GLUT_UP:
+            doZoom = False
 
-    # Reset modelview matrix
-    glLoadIdentity()
 
-    # Translate
-    glTranslate(newXPos,newYPos,0.0)
+def mouseMotion(x,y):
+    ''' 
+    handle mouse motion
+    '''
+    global angle, doZoom, doRotation, doTranslation, scaleFactor, center, mouseLastX, mouseLastY, rotateX, rotateY, sceneWidth, sceneHeight, newXPos, newYPos, zoomFactor
     
-    # Rotate
-    glRotate(rotateX, 1, 0, 0)
-    glRotate(rotateY, 0, 1, 0)
-    glRotate(rotateZ, 0, 0, 1)
+    xDiff = 0
+    yDiff = 0
     
-    # Scale + Zoom
-    glScale(scaleFactor+zoomFactor, scaleFactor+zoomFactor, scaleFactor+zoomFactor)
+    # calc difference between act and last x,y mouse coordinates
+    if mouseLastX != None:
+        xDiff = x - mouseLastX
+    if mouseLastY != None:
+        yDiff = y - mouseLastY
     
-    # move to center
-    glTranslate(-center[0], -center[1], -center[2])
-            
-    # show object as wires
-    if wireMode:
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-        # Draw VBO as Triangles
-        glDrawArrays(GL_TRIANGLES, 0, len(data))
+    # rotate
+    if doRotation:        
+        if xDiff != 0:
+            rotateY += xDiff
+        if yDiff != 0:
+            rotateX += yDiff
     
-    # show object as solid
-    if solidMode:
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        # Draw VBO as Triangles
-        glDrawArrays(GL_TRIANGLES, 0, len(data))
-
-    my_vbo.unbind()
+    # zoom  
+    if doZoom:  
+        zScale = float(sceneHeight) / angle
+        if yDiff != 0:
+            zoomFactor += yDiff / zScale
+            # limit max zoomFactor
+            if zoomFactor >= 1.5:
+                zoomFactor = 1.49     
     
-    glDisableClientState(GL_VERTEX_ARRAY)
-    glDisableClientState(GL_NORMAL_ARRAY)
+    # translatation
+    if doTranslation:
+        scale = float(sceneWidth) / 2.0
+        if xDiff != 0:
+            newXPos += xDiff / scale
+        if yDiff != 0:
+            newYPos += -yDiff / scale
     
-    #swap buffer
-    glutSwapBuffers()            
-
+    # Remember last x,y mouse coordinates
+    mouseLastX = x
+    mouseLastY = y
+    
+    glutPostRedisplay()
+    
 
 def keyPressed(key, x, y):
     '''
@@ -435,7 +333,7 @@ def resizeViewport(width, height):
     '''
     Adjust projection matrix to window size
     '''
-    global sceneWidth, sceneHeight
+    global sceneWidth, sceneHeight, fov
     
     if height == 0:
         height = 1
@@ -462,25 +360,124 @@ def resizeViewport(width, height):
     if perspectiveMode:
         if width <= height:
             viewportHeight
-            gluPerspective(45.,aspect,0.1,100.0)
+            gluPerspective(fov,aspect,0.1,100.0)
         else:
             viewportWidth
-            gluPerspective(45.,aspect,0.1,100.0)
+            gluPerspective(fov,aspect,0.1,100.0)
             
     glMatrixMode(GL_MODELVIEW)
     
     #swap buffer
-    glutSwapBuffers()  
+    glutSwapBuffers()
+
+
+def display():
+    '''
+    Render all objects
+    '''
+    global scaleFactor, center, my_vbo, actOri, angle, axis, data, wireMode, orthoMode, perspectiveMode, solidMode, light, newXPos, newYPos, zoomFactor
+
+    # Clear framebuffer
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    
+    # view as ortho Projection
+    if orthoMode:
+        # if light is enabled
+        if light:
+            glEnable(GL_LIGHTING)
+            glEnable(GL_LIGHT0)
+            glEnable(GL_COLOR_MATERIAL)
+            glEnable(GL_DEPTH_TEST)
+            glEnable(GL_NORMALIZE)
+        else:
+            glDisable(GL_LIGHTING)
+            
+        #switch to projection matrix
+        glMatrixMode(GL_PROJECTION)
+        #set to 1
+        glLoadIdentity()
+        # Camera, multiply with new p-matrix
+        gluOrtho2D(-1.5+zoomFactor, 1.5-zoomFactor, -1.5+zoomFactor, 1.5-zoomFactor)
+        #switch to modelview matrix
+        glMatrixMode(GL_MODELVIEW)
+    
+    # view as perspective Projection
+    if perspectiveMode:
+        # if light is enabled
+        if light:
+            glEnable(GL_LIGHTING)
+            glEnable(GL_LIGHT0)
+            glEnable(GL_DEPTH_TEST)
+            glEnable(GL_NORMALIZE)
+        else:
+            glDisable(GL_LIGHTING)
+        #switch to projection matrix
+        glMatrixMode(GL_PROJECTION)
+        #set to 1
+        glLoadIdentity()
+        #change perspective mode
+        gluPerspective(fov, aspect, near, far)
+        #set Camera
+        gluLookAt (0,0,3+zoomFactor,0,0,0,0,1,0)
+        #switch to modelview matrix
+        glMatrixMode(GL_MODELVIEW)
+    
+    # render vertox buffer object
+    my_vbo.bind()
+    
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glEnableClientState(GL_NORMAL_ARRAY)
+    
+    glVertexPointer(3, GL_FLOAT, 24 , my_vbo)
+    glNormalPointer(GL_FLOAT, 24 , my_vbo + 12)
+
+    # Reset modelview matrix
+    glLoadIdentity()
+
+    # Translate
+    glTranslate(newXPos,newYPos,0.0)
+    
+    # Rotate
+    glRotate(rotateX, 1, 0, 0)
+    glRotate(rotateY, 0, 1, 0)
+    glRotate(rotateZ, 0, 0, 1)
+    
+    # Scale
+    glScale(scaleFactor, scaleFactor, scaleFactor)
+    
+    # move to center
+    glTranslate(-center[0], -center[1], -center[2])
+            
+    # show object as wires
+    if wireMode:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        # Draw VBO as Triangles
+        glDrawArrays(GL_TRIANGLES, 0, len(data))
+    
+    # show object as solid
+    if solidMode:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        # Draw VBO as Triangles
+        glDrawArrays(GL_TRIANGLES, 0, len(data))
+
+    my_vbo.unbind()
+    
+    glDisableClientState(GL_VERTEX_ARRAY)
+    glDisableClientState(GL_NORMAL_ARRAY)
+    
+    #swap buffer
+    glutSwapBuffers() 
 
 
 def main():
     '''
-    Fenster initialisieren, File einlesen, BoundingBox erstellen/zentrieren/skalieren
+    Init Window, register Callback functions, init geometry, start processing
     '''
     glutInit(sys.argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize (500,500)
     glutCreateWindow("OpenGL obj Viewer")
+    
     # Register display callback function
     glutDisplayFunc(display)
     # Register reshape callback function
@@ -489,9 +486,9 @@ def main():
     glutKeyboardFunc(keyPressed)
     #register mouse function
     glutMouseFunc(mouse)         
-    #register motion function
+    # Register motion function
     glutMotionFunc(mouseMotion)  
-    
+    # Init Geometry
     initGeometryFromObjFile()
     
     # Init OpenGL context
