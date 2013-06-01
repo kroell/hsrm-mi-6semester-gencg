@@ -1,6 +1,6 @@
 '''
 Created on May 23, 2013
-Finished on May 30, 2013
+Finished on Jun 01, 2013
 
 Generative Computergrafik, Uebungsblatt 7, Aufgabe 1
 OpenGL obj Viewer - Bewertete Abgabe
@@ -72,23 +72,23 @@ zoomFactor = 0
 frontColorIndex,backColorIndex = 2,1
 rotateX, rotateY, rotateZ = 0, 0, 0
 WIDTH, HEIGHT = 500, 500
+MAX_ZOOM = 1.5
+MIN_ZOOM = -10.0
 
 aspect = float(WIDTH/HEIGHT)
-fov = 45.0
-near = 0.1
-far = 100.0
+FOV = 50.0 
+NEAR_PLANE = 0.1
+FAR_PLANE = 100.0
 
 rotateX, rotateY, rotateZ = 0, 0, 0
 
 # color definitions
-black = (0.0,0.0,0.0,0.0)
-white = (1.0,1.0,1.0,1.0)
-blue = (0.0,0.0,1.0,0.0)
-green = (0.0,1.0,0.0,0.0)
-yellow = (1.0,1.0,0.0,0.0)
-red = (1.0,0.0,0.0,0.0)
-
-colorList = [black, white, red, green, blue, yellow]
+colorList = [(0.0,0.0,0.0,0.0), #black
+             (1.0,1.0,1.0,1.0), #white
+             (1.0,0.0,0.0,0.0), #red
+             (0.0,1.0,0.0,0.0), # green
+             (0.0,0.0,1.0,0.0), #blue
+             (1.0,1.0,0.0,0.0)] #yellow
 
 
 def initGL(width, height):
@@ -145,7 +145,6 @@ def initGeometryFromObjFile():
             data.append(objectVertices[vn] + normals)
     
     my_vbo = vbo.VBO(array(data,'f'))
-    
 
 
 def loadOBJ(filename):
@@ -197,13 +196,6 @@ def mouse(button, state, x, y):
         if state == GLUT_UP:
             doRotation = False
             
-    # zoom object
-    if button == GLUT_MIDDLE_BUTTON:
-        if state == GLUT_DOWN:
-            doZoom = True
-        if state == GLUT_UP:
-            doZoom = False
-            
     # translate object
     if button == GLUT_RIGHT_BUTTON:
         if state == GLUT_DOWN:
@@ -211,6 +203,13 @@ def mouse(button, state, x, y):
         if state == GLUT_UP:
             doTranslation = False
         
+    # zoom object
+    if button == GLUT_MIDDLE_BUTTON:
+        if state == GLUT_DOWN:
+            doZoom = True
+        if state == GLUT_UP:
+            doZoom = False
+
 
 def mouseMotion(x,y):
     ''' 
@@ -234,13 +233,17 @@ def mouseMotion(x,y):
         if yDiff != 0:
             rotateX += yDiff
     
-    global sceneWidth, sceneHeight
     # zoom  
     if doZoom:  
         zScale = float(sceneHeight) / angle
         if yDiff != 0:
-            zoomFactor += (yDiff / zScale)  
-            resizeViewport(sceneWidth, sceneHeight) 
+            zoomFactor += yDiff / zScale
+            # limit zoomFactor
+            if zoomFactor >= MAX_ZOOM:
+                zoomFactor = MAX_ZOOM - 0.01
+            if zoomFactor <= MIN_ZOOM:
+                zoomFactor = MIN_ZOOM   
+            reshape(sceneWidth, sceneHeight) 
     
     # translatation
     if doTranslation:
@@ -323,23 +326,23 @@ def keyPressed(key, x, y):
         if perspectiveMode:
             orthoMode = True
             perspectiveMode =False
-            resizeViewport(sceneWidth, sceneHeight)
+            reshape(sceneWidth, sceneHeight)
             
     # Activate Perspective-Projection
     if key == 'p':
         if orthoMode:
             orthoMode = False
             perspectiveMode =True
-            resizeViewport(sceneWidth, sceneHeight)
+            reshape(sceneWidth, sceneHeight)
 
     glutPostRedisplay()
 
 
-def resizeViewport(width, height):
+def reshape(width, height):
     '''
     Adjust projection matrix to window size
     '''
-    global sceneWidth, sceneHeight, fov, near, far
+    global sceneWidth, sceneHeight, orthoMode, perspectiveMode, zoomFactor
     
     if height == 0:
         height = 1
@@ -348,13 +351,14 @@ def resizeViewport(width, height):
     sceneWidth = width
     sceneHeight = height
 
+    # Change Matrix Mode
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     
     # set Viewport
     glViewport(0, 0, int(width), int(height))
 
-    aspect = float(width)/ height
+    aspectWidth = float(width)/ height
     aspectHeight = float(height) / width
     
     # Ortho Projection
@@ -364,15 +368,15 @@ def resizeViewport(width, height):
         elif width <= height:
             glOrtho(-1.5 + zoomFactor , 1.5 - zoomFactor, (-1.5 + zoomFactor) * aspectHeight, (1.5 - zoomFactor) * aspectHeight, -1.0, 1.0)
         else:
-            glOrtho((-1.5 + zoomFactor)* aspect, (1.5 - zoomFactor) * aspect, -1.5 + zoomFactor, 1.5 - zoomFactor, -10.0, 10.0)
+            glOrtho((-1.5 + zoomFactor) * aspectWidth, (1.5 - zoomFactor) * aspectWidth, -1.5 + zoomFactor, 1.5 - zoomFactor, -10.0, 10.0)
     
     # Perspective Projection
     if perspectiveMode:
         if width <= height:
-            gluPerspective(fov*aspectHeight, aspect, near, far)
+            gluPerspective(FOV*aspectHeight, aspectWidth, NEAR_PLANE, FAR_PLANE)
         else:
-            gluPerspective(fov, aspect, near, far)
-        gluLookAt(0, 0, 3 + zoomFactor, 0, 0 ,0 , 0 ,1 ,0)
+            gluPerspective(FOV, aspectWidth, NEAR_PLANE, FAR_PLANE)
+        gluLookAt(0, 0, 3 - zoomFactor, 0, 0 ,0 , 0 ,1 ,0)
         
     glMatrixMode(GL_MODELVIEW)
 
@@ -381,21 +385,18 @@ def display():
     '''
     Render all objects
     '''
-    global scaleFactor, center, my_vbo, actOri, angle, axis, data, wireMode, solidMode, light, newXPos, newYPos
-
-    glMatrixMode(GL_MODELVIEW)
+    global scaleFactor, center, my_vbo, actOri, angle, axis, data, wireMode, orthoMode, perspectiveMode, solidMode, light, newXPos, newYPos, zoomFactor
 
     # Clear framebuffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
     # Reset modelview matrix
     glLoadIdentity()
-
+    
     # if light is enabled
     if light:
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
-        # Possibility to change color
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
@@ -458,7 +459,7 @@ def main():
     # Register display callback function
     glutDisplayFunc(display)
     # Register reshape callback function
-    glutReshapeFunc(resizeViewport)
+    glutReshapeFunc(reshape)
     # Register keyboad callback function
     glutKeyboardFunc(keyPressed)
     #register mouse function
